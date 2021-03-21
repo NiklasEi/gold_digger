@@ -45,8 +45,8 @@ fn check_player_position(
     }
 }
 
-fn fuel_up(base: Res<Base>, mut diggerState: ResMut<DiggerState>) {
+fn fuel_up(base: Res<Base>, mut digger_state: ResMut<DiggerState>) {
     if base.active {
-        diggerState.fuel = diggerState.fuel_max;
+        digger_state.fuel = digger_state.fuel_max;
     }
 }

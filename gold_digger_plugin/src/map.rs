@@ -1,6 +1,7 @@
 use crate::GameState;
 use bevy::prelude::*;
 
+use crate::loading::TextureAssets;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use rand::{random, Rng};
@@ -22,44 +23,30 @@ impl Plugin for MapPlugin {
 
 pub struct PlayerCamera;
 
-trait Tile {
-    fn asset_path(&self) -> String;
-}
-
-enum NonMinerals {
+#[derive(PartialEq, Clone)]
+pub enum Tile {
     None,
     Base,
-}
-
-impl Tile for NonMinerals {
-    fn asset_path(&self) -> String {
-        return match self {
-            NonMinerals::Base => "base.png".to_owned(),
-            NonMinerals::None => "none.png".to_owned(),
-        };
-    }
-}
-
-enum Mineral {
     Stone,
     Gold,
 }
 
-impl Distribution<Mineral> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Mineral {
-        match rng.gen_range(0..2) {
-            0 => Mineral::Stone,
-            _ => Mineral::Gold,
+impl Tile {
+    pub fn collides(&self) -> bool {
+        match self {
+            &Tile::Stone => true,
+            &Tile::Gold => true,
+            _ => false,
         }
     }
 }
 
-impl Tile for Mineral {
-    fn asset_path(&self) -> String {
-        return match self {
-            Mineral::Stone => "stone.png".to_owned(),
-            Mineral::Gold => "gold.png".to_owned(),
-        };
+impl Distribution<Tile> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tile {
+        match rng.gen_range(0..2) {
+            0 => Tile::Stone,
+            _ => Tile::Gold,
+        }
     }
 }
 
@@ -70,7 +57,7 @@ struct Dimensions {
 
 pub struct Map {
     dimensions: Dimensions,
-    pub tiles: Vec<Vec<String>>,
+    pub tiles: Vec<Vec<Tile>>,
     pub base: Vec2,
     pub tile_size: f32,
 }
@@ -85,11 +72,11 @@ fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
 
     for _sky_rows in 0..10 {
         map.tiles.push(
-            vec![NonMinerals::None]
+            vec![Tile::None]
                 .iter()
                 .cycle()
                 .take(map.dimensions.x as usize)
-                .map(|elem| elem.asset_path())
+                .cloned()
                 .collect(),
         );
     }
@@ -97,33 +84,29 @@ fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
     for _base_rows in 10..12 {
         let mut row = vec![];
         row.append(
-            &mut vec![NonMinerals::None]
+            &mut vec![Tile::None]
                 .iter()
                 .cycle()
                 .take((map.dimensions.x as usize) / 2 - 1)
-                .map(|elem| elem.asset_path())
+                .cloned()
                 .collect(),
         );
-        row.append(&mut vec![
-            NonMinerals::Base.asset_path(),
-            NonMinerals::Base.asset_path(),
-        ]);
+        row.append(&mut vec![Tile::Base, Tile::Base]);
         row.append(
-            &mut vec![NonMinerals::None]
+            &mut vec![Tile::None]
                 .iter()
                 .cycle()
                 .take((map.dimensions.x as usize) / 2 - 1)
-                .map(|elem| elem.asset_path())
+                .cloned()
                 .collect(),
         );
         map.tiles.push(row);
     }
 
     for _stone_row in 12..map.dimensions.y {
-        let mut row: Vec<String> = vec![];
+        let mut row: Vec<Tile> = vec![];
         for _column in 0..map.dimensions.x {
-            let mineral = random::<Mineral>();
-            row.push(mineral.asset_path());
+            row.push(random::<Tile>().clone());
         }
         map.tiles.push(row);
     }
@@ -145,20 +128,14 @@ fn spawn_camera(mut commands: Commands, map: Res<Map>) {
 fn render_map(
     mut commands: Commands,
     map: Res<Map>,
-    asset_server: Res<AssetServer>,
+    texture_assets: Res<TextureAssets>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    println!("Rendering map");
     for row in 0..map.dimensions.y {
         for column in 0..map.dimensions.x {
             let tile = &map.tiles[row as usize][column as usize];
-            println!(
-                "render {} at {}/{}",
-                tile,
-                column as f32 * map.tile_size,
-                row as f32 * map.tile_size
-            );
-            let handle = asset_server.load(&tile[..]);
+
+            let handle = texture_assets.get_tile_handle(tile);
             commands.spawn(SpriteBundle {
                 material: materials.add(handle.into()),
                 transform: Transform::from_translation(Vec3::new(
