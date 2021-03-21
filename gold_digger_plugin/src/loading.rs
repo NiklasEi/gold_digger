@@ -42,6 +42,7 @@ pub struct TextureAssets {
     pub texture_gold: Handle<Texture>,
     pub texture_gold_mining: Handle<Texture>,
     pub texture_base: Handle<Texture>,
+    pub texture_waste: Handle<Texture>,
 }
 
 impl TextureAssets {
@@ -54,6 +55,7 @@ impl TextureAssets {
             &Tile::TankUpgrade => self.texture_tank_upgrade.clone(),
             &Tile::Base => self.texture_base.clone(),
             &Tile::None => self.texture_sky.clone(),
+            &Tile::Waste => self.texture_waste.clone(),
         }
     }
     pub fn get_mining_tile_handle(&self, mineral: &Tile) -> Option<Handle<Texture>> {
@@ -80,6 +82,7 @@ fn start_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     textures.push(asset_server.load_untyped(PATHS.texture_gold));
     textures.push(asset_server.load_untyped(PATHS.texture_gold_mining));
     textures.push(asset_server.load_untyped(PATHS.texture_base));
+    textures.push(asset_server.load_untyped(PATHS.texture_waste));
 
     commands.insert_resource(LoadingState { textures, fonts });
 }
@@ -116,6 +119,7 @@ fn check_state(
         texture_stone_mining: asset_server.get_handle(PATHS.texture_stone_mining),
         texture_gold: asset_server.get_handle(PATHS.texture_gold),
         texture_gold_mining: asset_server.get_handle(PATHS.texture_gold_mining),
+        texture_waste: asset_server.get_handle(PATHS.texture_waste),
     });
 
     state.set_next(GameState::Menu).unwrap();

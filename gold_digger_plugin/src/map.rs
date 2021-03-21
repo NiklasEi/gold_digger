@@ -44,11 +44,13 @@ pub enum Tile {
     Base,
     Stone,
     Gold,
+    Waste,
 }
 
 pub enum MiningEffect {
     Money(f32),
     TankUpgrade(f32),
+    CollectedWaste,
 }
 
 impl Tile {
@@ -58,6 +60,7 @@ impl Tile {
             &Tile::Gold => true,
             &Tile::Border => true,
             &Tile::TankUpgrade => true,
+            &Tile::Waste => true,
             _ => false,
         }
     }
@@ -65,7 +68,8 @@ impl Tile {
     pub fn mining_strength(&self) -> Option<f32> {
         match self {
             &Tile::Stone => Some(15.),
-            &Tile::TankUpgrade => Some(0.),
+            &Tile::TankUpgrade => Some(5.),
+            &Tile::Waste => Some(5.),
             &Tile::Gold => Some(20.),
             _ => None,
         }
@@ -75,6 +79,7 @@ impl Tile {
         match self {
             &Tile::Gold => Some(MiningEffect::Money(10.)),
             &Tile::TankUpgrade => Some(MiningEffect::TankUpgrade(5.)),
+            &Tile::Waste => Some(MiningEffect::CollectedWaste),
             _ => None,
         }
     }
@@ -176,6 +181,13 @@ fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
     let x: usize = rng.gen_range(1..map.dimensions.x - 1);
     map.tiles[map.dimensions.y - 15][x] = Tile::TankUpgrade;
 
+    // distribute 10 waste
+    for _depth in 0..10 {
+        let x: usize = rng.gen_range(1..map.dimensions.x - 1);
+        let y: usize = rng.gen_range(1..map.dimensions.y - 13);
+
+        map.tiles[y][x] = Tile::Waste;
+    }
     commands.insert_resource(map);
     state.set_next(GameState::Playing).unwrap();
 }

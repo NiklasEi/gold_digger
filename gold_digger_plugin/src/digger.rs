@@ -48,6 +48,7 @@ impl Plugin for DiggerPlugin {
 pub struct Digger;
 
 pub struct DiggerState {
+    pub waste: usize,
     pub dead: bool,
     pub money: f32,
     pub health: f32,
@@ -64,6 +65,7 @@ pub struct DiggerState {
 impl Default for DiggerState {
     fn default() -> Self {
         DiggerState {
+            waste: 0,
             mining_target: None,
             dead: false,
             money: 0.,
@@ -256,6 +258,8 @@ fn dig(
             println!("upping fuel by {}", value);
             digger_state.fuel += value;
             digger_state.fuel_max += value;
+        } else if let Some(MiningEffect::CollectedWaste) = tile.effect() {
+            digger_state.waste += 1;
         }
         for (entity, map_tile, mut material) in tile_query.iter_mut() {
             if map_tile.x != digger_state.mining_target.unwrap().0
@@ -267,6 +271,7 @@ fn dig(
             *material = materials.add(texture_assets.texture_background.clone().into());
             map.tiles[digger_state.mining_target.unwrap().1]
                 [digger_state.mining_target.unwrap().0] = Tile::Background;
+            println!("reset mining status");
             digger_state.mining_target = None;
             digger_state.mining = 0.;
             break;

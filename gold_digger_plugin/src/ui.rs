@@ -14,7 +14,8 @@ impl Plugin for UiPlugin {
                     .with_system(update_game_state.system())
                     .with_system(retry_system.system())
                     .with_system(click_retry_button.system())
-                    .with_system(update_base_text.system()),
+                    .with_system(update_base_text.system())
+                    .with_system(update_waste_text.system()),
             )
             .add_system_set(SystemSet::on_exit(GameState::Playing).with_system(remove_ui.system()));
     }
@@ -42,6 +43,8 @@ struct RetryButton;
 struct HealthText;
 
 struct BaseText;
+
+struct WasteText;
 
 struct FuelText;
 
@@ -175,6 +178,41 @@ fn init_life(
             style: Style {
                 position_type: PositionType::Absolute,
                 position: Rect {
+                    right: Val::Px(10.),
+                    top: Val::Px(50.),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            material: material.clone(),
+            ..Default::default()
+        })
+        .with(Ui)
+        .with_children(|parent| {
+            parent
+                .spawn(TextBundle {
+                    text: Text {
+                        sections: vec![TextSection {
+                            value: format!("Collected waste {}/{}", digger_state.waste, 10),
+                            style: TextStyle {
+                                font_size: 40.0,
+                                font: font.clone(),
+                                color: Color::rgb(1., 1., 1.),
+                                ..Default::default()
+                            },
+                        }],
+                        alignment: Default::default(),
+                    },
+                    ..Default::default()
+                })
+                .with(WasteText);
+        });
+
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                position: Rect {
                     left: Val::Percent(40.),
                     top: Val::Px(10.),
                     ..Default::default()
@@ -248,6 +286,13 @@ fn update_base_text(base: Res<Base>, mut base_query: Query<&mut Text, With<BaseT
             .first_mut()
             .unwrap()
             .value = "".to_owned();
+    }
+}
+
+fn update_waste_text(digger_state: Res<DiggerState>, mut query: Query<&mut Text, With<WasteText>>) {
+    for mut text in query.iter_mut() {
+        text.sections.first_mut().unwrap().value =
+            format!("Collected waste {}/{}", digger_state.waste, 10);
     }
 }
 

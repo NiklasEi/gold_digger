@@ -10,6 +10,7 @@ pub struct AssetPaths {
     pub texture_gold: &'static str,
     pub texture_gold_mining: &'static str,
     pub texture_base: &'static str,
+    pub texture_waste: &'static str,
 }
 
 pub const PATHS: AssetPaths = AssetPaths {
@@ -24,4 +25,5 @@ pub const PATHS: AssetPaths = AssetPaths {
     texture_stone_mining: "textures/stone_mining.png",
     texture_gold: "textures/gold.png",
     texture_gold_mining: "textures/gold_mining.png",
+    texture_waste: "textures/waste.png",
 };
