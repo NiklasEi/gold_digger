@@ -231,11 +231,7 @@ fn remove_map(
     map_query: Query<Entity, With<MapTile>>,
     _player_camera: Query<Entity, With<PlayerCamera>>,
 ) {
-    println!("clearing map");
     for entity in map_query.iter() {
         commands.despawn(entity);
     }
-    // for camera in player_camera.iter() {
-    //     commands.despawn(camera);
-    // }
 }

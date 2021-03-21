@@ -259,7 +259,6 @@ fn dig(
         if let Some(MiningEffect::Money(value)) = tile.effect() {
             digger_state.money += value;
         } else if let Some(MiningEffect::TankUpgrade(value)) = tile.effect() {
-            println!("upping fuel by {}", value);
             fuel_upgrade.send(FuelUpgrade);
             digger_state.fuel += value;
             digger_state.fuel_max += value;
@@ -277,7 +276,6 @@ fn dig(
             *material = materials.add(texture_assets.texture_background.clone().into());
             map.tiles[digger_state.mining_target.unwrap().1]
                 [digger_state.mining_target.unwrap().0] = Tile::Background;
-            println!("reset mining status");
             digger_state.mining_target = None;
             digger_state.mining = 0.;
             break;
