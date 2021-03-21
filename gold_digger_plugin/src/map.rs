@@ -35,7 +35,7 @@ impl Tile {
     pub fn collides(&self) -> bool {
         match self {
             &Tile::Stone => true,
-            &Tile::Gold => true,
+            &Tile::Gold => false,
             _ => false,
         }
     }

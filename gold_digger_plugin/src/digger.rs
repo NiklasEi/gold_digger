@@ -20,7 +20,7 @@ impl Plugin for DiggerPlugin {
                 SystemSet::on_update(GameState::Playing)
                     .with_system(move_digger.system())
                     .with_system(loose_fuel.system())
-                    .with_system(fall.system()),
+                    .with_system(update_fall_and_fly.system()),
             );
     }
 }
@@ -33,8 +33,8 @@ pub struct DiggerState {
     pub health_max: f32,
     pub fuel: f32,
     pub fuel_max: f32,
-    pub falling_speed: Option<f32>,
-    pub flying_speed: Option<f32>,
+    pub falling: bool,
+    pub falling_speed: f32,
 }
 
 impl Default for DiggerState {
@@ -45,8 +45,8 @@ impl Default for DiggerState {
             health_max: 100.,
             fuel: 20.,
             fuel_max: 20.,
-            falling_speed: None,
-            flying_speed: None,
+            falling: false,
+            falling_speed: 0.,
         }
     }
 }
@@ -68,10 +68,11 @@ fn spawn_digger(
 
 fn move_digger(
     time: Res<Time>,
-    digger_state: ResMut<DiggerState>,
+    mut digger_state: ResMut<DiggerState>,
     actions: Res<Actions>,
+    map: Res<Map>,
     mut camera_query: Query<&mut Transform, (With<PlayerCamera>, Without<Digger>)>,
-    mut player_query: Query<&mut Transform, (With<Digger>, Without<PlayerCamera>)>,
+    mut digger_query: Query<&mut Transform, (With<Digger>, Without<PlayerCamera>)>,
 ) {
     let mut x = 0.;
     let mut y = 0.;
@@ -79,16 +80,66 @@ fn move_digger(
         let speed = 150.;
         x += drive * speed * time.delta_seconds();
     }
-    if actions.flying {
-        y += digger_state.flying_speed.unwrap_or(0.) * time.delta_seconds();
-    } else {
-        y -= digger_state.falling_speed.unwrap_or(0.) * time.delta_seconds();
-    }
-    for mut player_transform in player_query.iter_mut() {
-        player_transform.translation.y += y;
-        player_transform.translation.x += x;
+    y += digger_state.falling_speed * time.delta_seconds();
+    for mut digger_transform in digger_query.iter_mut() {
+        let slot_current_y = ((digger_transform.translation.y
+            + if y > 0. {
+                Y_OFFSET_TO_DIGGER_BOTTOM
+            } else {
+                -Y_OFFSET_TO_DIGGER_BOTTOM
+            })
+            / map.tile_size)
+            .round() as usize;
+
+        let new_border_translation_y = digger_transform.translation.y
+            + y
+            + if y > 0. {
+                Y_OFFSET_TO_DIGGER_BOTTOM
+            } else {
+                -Y_OFFSET_TO_DIGGER_BOTTOM
+            };
+        let slot_x_left = ((digger_transform.translation.x - LEFT_OFFSET_TO_DIGGER_BORDER)
+            / map.tile_size)
+            .round() as usize;
+        let slot_x_right = ((digger_transform.translation.x + RIGHT_OFFSET_TO_DIGGER_BORDER)
+            / map.tile_size)
+            .round() as usize;
+        let slot_next_y = (new_border_translation_y / map.tile_size).round() as usize;
+
+        if slot_current_y != slot_next_y {
+            let next_tile_left = &map.tiles[slot_next_y][slot_x_left];
+            let next_tile_right = &map.tiles[slot_next_y][slot_x_right];
+            if next_tile_left.collides() || next_tile_right.collides() {
+                digger_state.falling_speed = 0.;
+                y = if y > 0. {
+                    y + (map.tile_size / 2.)
+                        - (new_border_translation_y % map.tile_size).round()
+                        - 0.5
+                } else {
+                    y + (map.tile_size / 2.) - (new_border_translation_y % map.tile_size).round()
+                        + 0.5
+                }
+            }
+        }
+
+        let slot_next_x = ((x + if x > 0. {
+            digger_transform.translation.x + RIGHT_OFFSET_TO_DIGGER_BORDER
+        } else {
+            digger_transform.translation.x - LEFT_OFFSET_TO_DIGGER_BORDER
+        }) / map.tile_size)
+            .round() as usize;
+
+        if slot_next_x != if x > 0. { slot_x_right } else { slot_x_left } {
+            let next_tile = &map.tiles[slot_next_y][slot_next_x];
+            if next_tile.collides() {
+                x = 0.;
+            }
+        }
+
+        digger_transform.translation.y += y;
+        digger_transform.translation.x += x;
         for mut transform in camera_query.iter_mut() {
-            transform.translation = player_transform.translation;
+            transform.translation = digger_transform.translation;
         }
     }
 }
@@ -98,31 +149,33 @@ fn loose_fuel(mut digger_state: ResMut<DiggerState>, time: Res<Time>) {
     digger_state.fuel -= fuel_rate * time.delta_seconds();
 }
 
-fn fall(
+fn update_fall_and_fly(
     mut digger_state: ResMut<DiggerState>,
     time: Res<Time>,
+    actions: Res<Actions>,
     map: Res<Map>,
     digger_query: Query<&Transform, With<Digger>>,
 ) {
     let falling_rate = 500.;
-    if let Ok(transform) = digger_query.single() {
-        let digger_bottom = transform.translation.y - Y_OFFSET_TO_DIGGER_BOTTOM;
-        let slot_x_left = ((transform.translation.x - LEFT_OFFSET_TO_DIGGER_BORDER) / map.tile_size)
-            .round() as usize;
-        let slot_x_right = ((transform.translation.x + RIGHT_OFFSET_TO_DIGGER_BORDER)
+    let flying_rate = 300.;
+    for digger_transform in digger_query.iter() {
+        let new_border_translation_y =
+            digger_transform.translation.y - Y_OFFSET_TO_DIGGER_BOTTOM - 1.;
+        let slot_x_left = ((digger_transform.translation.x - LEFT_OFFSET_TO_DIGGER_BORDER)
             / map.tile_size)
             .round() as usize;
-        let slot_y = (digger_bottom / map.tile_size).round() as usize;
-
-        let tile_left = &map.tiles[slot_y][slot_x_left];
-        let tile_right = &map.tiles[slot_y][slot_x_right];
-        let mut current_falling_speed = digger_state.falling_speed.unwrap_or(0.);
-        if tile_left.collides() || tile_right.collides() {
-            digger_state.falling_speed = None;
-        } else {
-            current_falling_speed += falling_rate * time.delta_seconds();
-            current_falling_speed = current_falling_speed.clamp(0., 500.);
-            digger_state.falling_speed = Some(current_falling_speed);
-        }
+        let slot_x_right = ((digger_transform.translation.x + RIGHT_OFFSET_TO_DIGGER_BORDER)
+            / map.tile_size)
+            .round() as usize;
+        let slot_next_y = (new_border_translation_y / map.tile_size).round() as usize;
+        let next_tile_left = &map.tiles[slot_next_y][slot_x_left];
+        let next_tile_right = &map.tiles[slot_next_y][slot_x_right];
+        digger_state.falling = !next_tile_left.collides() && !next_tile_right.collides();
     }
+    if actions.flying {
+        digger_state.falling_speed += flying_rate * time.delta_seconds();
+    } else if digger_state.falling {
+        digger_state.falling_speed -= falling_rate * time.delta_seconds();
+    }
+    digger_state.falling_speed = digger_state.falling_speed.clamp(-falling_rate, flying_rate);
 }

@@ -12,11 +12,11 @@ use crate::digger::DiggerPlugin;
 use crate::loading::LoadingPlugin;
 use crate::map::MapPlugin;
 use crate::menu::MenuPlugin;
+use crate::ui::UiPlugin;
 use bevy::app::AppBuilder;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-use bevy::prelude::*;
 use bevy::ecs::schedule::SystemSet;
-use crate::ui::UiPlugin;
+use bevy::prelude::*;
 
 #[derive(Clone, Eq, PartialEq)]
 enum GameState {
@@ -39,9 +39,9 @@ impl Plugin for GamePlugin {
             .add_plugin(DiggerPlugin)
             .add_plugin(ActionsPlugin)
             .add_plugin(BasePlugin)
-
-            .add_system_set(SystemSet::on_enter(GameState::Restart)
-                .with_system(switch_to_game.system()))
+            .add_system_set(
+                SystemSet::on_enter(GameState::Restart).with_system(switch_to_game.system()),
+            )
             .add_plugin(FrameTimeDiagnosticsPlugin::default())
             .add_plugin(LogDiagnosticsPlugin::default());
     }

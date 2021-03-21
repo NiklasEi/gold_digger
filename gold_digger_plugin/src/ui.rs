@@ -1,19 +1,19 @@
+use crate::digger::DiggerState;
 use crate::GameState;
 use bevy::prelude::*;
-use crate::digger::DiggerState;
 
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app
-            .init_resource::<ButtonMaterials>()
-            .add_system_set(SystemSet::on_enter(GameState::Playing)
-                .with_system(init_life.system()))
-            .add_system_set(SystemSet::on_update(GameState::Playing)
-                .with_system(update_game_state.system())
-            .with_system(retry_system.system())
-        .with_system(click_retry_button.system()));
+        app.init_resource::<ButtonMaterials>()
+            .add_system_set(SystemSet::on_enter(GameState::Playing).with_system(init_life.system()))
+            .add_system_set(
+                SystemSet::on_update(GameState::Playing)
+                    .with_system(update_game_state.system())
+                    .with_system(retry_system.system())
+                    .with_system(click_retry_button.system()),
+            );
     }
 }
 
@@ -48,10 +48,10 @@ fn init_life(
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let material = color_materials.add(Color::NONE.into());
-    commands
-        .spawn(UiCameraBundle::default());
+    commands.spawn(UiCameraBundle::default());
 
-    commands.spawn(NodeBundle {
+    commands
+        .spawn(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 position: Rect {
@@ -68,51 +68,58 @@ fn init_life(
             parent
                 .spawn(TextBundle {
                     text: Text {
-                        sections:vec![
-                            TextSection {
-                                value: format!("Health: {}/{}", digger_state.health.round(), digger_state.health_max), style: TextStyle {
-                                    font: font.clone(),
+                        sections: vec![TextSection {
+                            value: format!(
+                                "Health: {}/{}",
+                                digger_state.health.round(),
+                                digger_state.health_max
+                            ),
+                            style: TextStyle {
+                                font: font.clone(),
                                 font_size: 40.0,
                                 color: Color::rgb(0.6, 0.6, 0.6),
                                 ..Default::default()
                             },
-                            }
-                        ],
-                        alignment: Default::default()
+                        }],
+                        alignment: Default::default(),
                     },
                     ..Default::default()
                 })
                 .with(HealthText);
         });
 
-    commands.spawn(NodeBundle {
-        style: Style {
-            position_type: PositionType::Absolute,
-            position: Rect {
-                left: Val::Px(10.),
-                top: Val::Px(50.),
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                position: Rect {
+                    left: Val::Px(10.),
+                    top: Val::Px(50.),
+                    ..Default::default()
+                },
                 ..Default::default()
             },
+            material: material.clone(),
             ..Default::default()
-        },
-        material: material.clone(),
-        ..Default::default()
-    })
+        })
         .with_children(|parent| {
             parent
                 .spawn(TextBundle {
                     text: Text {
-                        sections:vec![
-                            TextSection {
-                                value: format!("Fuel: {}/{}", digger_state.fuel.round(), digger_state.fuel_max), style: TextStyle {
-                                    font: font.clone(),
-                                    font_size: 40.0,
-                                    color: Color::rgb(0.6, 0.6, 0.6),
-                                    ..Default::default()
-                                },
-                            }
-                        ],
-                        alignment: Default::default()
+                        sections: vec![TextSection {
+                            value: format!(
+                                "Fuel: {}/{}",
+                                digger_state.fuel.round(),
+                                digger_state.fuel_max
+                            ),
+                            style: TextStyle {
+                                font: font.clone(),
+                                font_size: 40.0,
+                                color: Color::rgb(0.6, 0.6, 0.6),
+                                ..Default::default()
+                            },
+                        }],
+                        alignment: Default::default(),
                     },
                     ..Default::default()
                 })
@@ -136,9 +143,7 @@ fn init_life(
             parent
                 .spawn(TextBundle {
                     text: Text {
-                        sections: vec![
-                        TextSection{
-
+                        sections: vec![TextSection {
                             value: format!("$ {}", digger_state.money),
                             style: TextStyle {
                                 font_size: 40.0,
@@ -147,7 +152,7 @@ fn init_life(
                                 ..Default::default()
                             },
                         }],
-                        alignment: Default::default()
+                        alignment: Default::default(),
                     },
                     ..Default::default()
                 })
@@ -158,17 +163,25 @@ fn init_life(
 fn update_game_state(
     digger_state: Res<DiggerState>,
     mut health_query: Query<&mut Text, (With<HealthText>, Without<MoneyText>, Without<FuelText>)>,
-    mut score_query: Query<&mut Text,(With<MoneyText>, Without<HealthText>, Without<FuelText>)>,
-    mut fuel_query: Query<&mut Text,(With<FuelText>, Without<HealthText>, Without<MoneyText>)>,
+    mut score_query: Query<&mut Text, (With<MoneyText>, Without<HealthText>, Without<FuelText>)>,
+    mut fuel_query: Query<&mut Text, (With<FuelText>, Without<HealthText>, Without<MoneyText>)>,
 ) {
     for mut text in health_query.iter_mut() {
-        text.sections.first_mut().unwrap().value = format!("Health: {}/{}", digger_state.health.round(), digger_state.health_max);
+        text.sections.first_mut().unwrap().value = format!(
+            "Health: {}/{}",
+            digger_state.health.round(),
+            digger_state.health_max
+        );
     }
     for mut text in score_query.iter_mut() {
         text.sections.first_mut().unwrap().value = format!("$ {}", digger_state.money);
     }
     for mut text in fuel_query.iter_mut() {
-        text.sections.first_mut().unwrap().value = format!("Fuel: {}/{}", digger_state.fuel.round(), digger_state.fuel_max);
+        text.sections.first_mut().unwrap().value = format!(
+            "Fuel: {}/{}",
+            digger_state.fuel.round(),
+            digger_state.fuel_max
+        );
     }
 }
 
@@ -178,7 +191,7 @@ fn retry_system(
     digger_state: Res<DiggerState>,
     button_materials: Res<ButtonMaterials>,
 ) {
-    if digger_state.health <= 0. {
+    if digger_state.health <= 0. || digger_state.fuel <= 0. {
         commands
             .spawn(ButtonBundle {
                 style: Style {
@@ -196,7 +209,6 @@ fn retry_system(
                 parent.spawn(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
-
                             value: "Restart".to_string(),
                             style: TextStyle {
                                 font_size: 40.0,
@@ -205,7 +217,7 @@ fn retry_system(
                                 ..Default::default()
                             },
                         }],
-                        alignment: Default::default()
+                        alignment: Default::default(),
                     },
                     ..Default::default()
                 });
