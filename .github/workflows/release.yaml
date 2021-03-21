@@ -1,0 +1,104 @@
+name: release-flow
+
+# https://help.github.com/en/articles/events-that-trigger-workflows#release-event-release
+# on: release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+jobs:
+  build-macOS:
+    runs-on: macOS-latest
+
+    steps:
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build and release
+        run: |
+          cargo build --release --features native
+          mkdir -p build/macos/TheCleanup.app/Contents/MacOS/assets
+          cp -r assets/ build/macos/TheCleanup.app/Contents/MacOS/assets
+          cp target/release/the_cleanup build/macos/TheCleanup.app/Contents/MacOS/
+          strip build/macos/TheCleanup.app/Contents/MacOS/the_cleanup
+          hdiutil create -fs HFS+ -volname "TheCleanup" -srcfolder build/macos the_cleanup.dmg
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: the_cleanup.dmg
+          asset_name: the_cleanup_macOS_${{ steps.tag.outputs.tag }}.dmg
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install Dependencies
+        run: sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+      - name: Build and release
+        run: |
+          cargo build --release
+          strip target/release/the_cleanup
+      - name: Prepare assets
+        run: |
+          mkdir target/release/assets && cp -r assets target/release/assets
+      - uses: papeloto/action-zip@v1
+        with:
+          files: target/release/assets/ target/release/the_cleanup
+          dest: the_cleanup_linux.zip
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: the_cleanup_linux.zip
+          asset_name: the_cleanup_linux_${{ steps.tag.outputs.tag }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build and release
+        run: |
+          cargo build --release
+      - name: Prepare assets
+        run: |
+          mkdir target/release/assets && cp -r assets target/release/assets
+      - uses: papeloto/action-zip@v1
+        with:
+          files: target/release/assets/ target/release/the_cleanup.exe
+          dest: the_cleanup_windows.zip
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: the_cleanup_windows.zip
+          asset_name: the_cleanup_windows_${{ steps.tag.outputs.tag }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true

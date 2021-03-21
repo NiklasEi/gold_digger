@@ -1360,7 +1360,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gold_digger_plugin"
+name = "the_cleanup_plugin"
 version = "0.1.0"
 dependencies = [
  "bevy",

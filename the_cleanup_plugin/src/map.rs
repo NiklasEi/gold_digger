@@ -10,16 +10,14 @@ pub struct MapPlugin;
 
 #[derive(SystemLabel, Eq, PartialEq, Hash, Clone, Debug)]
 pub enum MapSystemLabels {
-    DespawnMapAndCamera,
+    DespawnMapAndCamera
 }
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_system_set(
-            SystemSet::on_enter(GameState::GeneratingMap).with_system(generate_map.system()),
-        )
-        .add_system_set(
             SystemSet::on_enter(GameState::Playing)
+                .with_system(generate_map.exclusive_system())
                 .with_system(spawn_camera.system())
                 .with_system(render_map.system()),
         )
@@ -110,7 +108,7 @@ pub struct MapTile {
     pub y: usize,
 }
 
-fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
+fn generate_map(mut commands: Commands) {
     let mut map = Map {
         dimensions: Dimensions { x: 50, y: 100 },
         tiles: vec![],
@@ -187,8 +185,8 @@ fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
 
         map.tiles[y][x] = Tile::Waste;
     }
+
     commands.insert_resource(map);
-    state.set_next(GameState::Playing).unwrap();
 }
 
 fn spawn_camera(mut commands: Commands, map: Res<Map>) {
@@ -231,6 +229,7 @@ fn remove_map(
     map_query: Query<Entity, With<MapTile>>,
     _player_camera: Query<Entity, With<PlayerCamera>>,
 ) {
+    println!("clearing map");
     for entity in map_query.iter() {
         commands.despawn(entity);
     }

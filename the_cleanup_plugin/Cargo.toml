@@ -1,5 +1,5 @@
 [package]
-name = "gold_digger_plugin"
+name = "the_cleanup_plugin"
 version = "0.1.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"

@@ -84,7 +84,7 @@ fn click_play_button(
             Interaction::Clicked => {
                 commands.despawn(button);
                 commands.despawn(text);
-                state.set_next(GameState::GeneratingMap).unwrap();
+                state.set_next(GameState::Playing).unwrap();
             }
             Interaction::Hovered => {
                 *material = button_materials.hovered.clone();
