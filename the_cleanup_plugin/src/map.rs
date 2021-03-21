@@ -84,8 +84,10 @@ impl Tile {
 
 impl Distribution<Tile> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tile {
-        match rng.gen_range(0..2) {
+        match rng.gen_range(0..4) {
             0 => Tile::Stone,
+            1 => Tile::Stone,
+            2 => Tile::Stone,
             _ => Tile::Gold,
         }
     }

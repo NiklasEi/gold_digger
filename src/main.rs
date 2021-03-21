@@ -1,3 +1,6 @@
+// disable console opening on windows
+#![windows_subsystem = "windows"]
+
 use bevy::prelude::{App, Msaa, WindowDescriptor};
 use bevy::DefaultPlugins;
 use the_cleanup_plugin::GamePlugin;

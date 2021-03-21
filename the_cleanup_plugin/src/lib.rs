@@ -16,7 +16,7 @@ use crate::map::MapPlugin;
 use crate::menu::MenuPlugin;
 use crate::ui::UiPlugin;
 use bevy::app::AppBuilder;
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+// use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::ecs::schedule::SystemSet;
 use bevy::prelude::*;
 
@@ -41,11 +41,11 @@ impl Plugin for GamePlugin {
             .add_plugin(ActionsPlugin)
             .add_plugin(BasePlugin)
             .add_plugin(InternalAudioPlugin)
+            // .add_plugin(FrameTimeDiagnosticsPlugin::default())
+            // .add_plugin(LogDiagnosticsPlugin::default())
             .add_system_set(
                 SystemSet::on_enter(GameState::Restart).with_system(switch_to_game.system()),
-            )
-            .add_plugin(FrameTimeDiagnosticsPlugin::default())
-            .add_plugin(LogDiagnosticsPlugin::default());
+            );
     }
 }
 

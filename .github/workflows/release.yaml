@@ -23,7 +23,7 @@ jobs:
           override: true
       - name: Build and release
         run: |
-          cargo build --release --features native
+          cargo build --release
           mkdir -p build/macos/TheCleanup.app/Contents/MacOS/assets
           cp -r assets/ build/macos/TheCleanup.app/Contents/MacOS/assets
           cp target/release/the_cleanup build/macos/TheCleanup.app/Contents/MacOS/
