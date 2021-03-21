@@ -26,6 +26,7 @@ pub struct PlayerCamera;
 #[derive(PartialEq, Clone)]
 pub enum Tile {
     None,
+    Background,
     Base,
     Stone,
     Gold,
@@ -35,8 +36,23 @@ impl Tile {
     pub fn collides(&self) -> bool {
         match self {
             &Tile::Stone => true,
-            &Tile::Gold => false,
+            &Tile::Gold => true,
             _ => false,
+        }
+    }
+
+    pub fn mining_strength(&self) -> Option<f32> {
+        match self {
+            &Tile::Stone => Some(15.),
+            &Tile::Gold => Some(20.),
+            _ => None,
+        }
+    }
+
+    pub fn value(&self) -> f32 {
+        match self {
+            &Tile::Gold => 10.,
+            _ => 0.,
         }
     }
 }
@@ -51,8 +67,8 @@ impl Distribution<Tile> for Standard {
 }
 
 struct Dimensions {
-    x: u16,
-    y: u16,
+    x: usize,
+    y: usize,
 }
 
 pub struct Map {
@@ -60,6 +76,11 @@ pub struct Map {
     pub tiles: Vec<Vec<Tile>>,
     pub base: Vec2,
     pub tile_size: f32,
+}
+
+pub struct MapTile {
+    pub x: usize,
+    pub y: usize,
 }
 
 fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
@@ -136,15 +157,17 @@ fn render_map(
             let tile = &map.tiles[row as usize][column as usize];
 
             let handle = texture_assets.get_tile_handle(tile);
-            commands.spawn(SpriteBundle {
-                material: materials.add(handle.into()),
-                transform: Transform::from_translation(Vec3::new(
-                    column as f32 * map.tile_size,
-                    row as f32 * map.tile_size,
-                    0.,
-                )),
-                ..Default::default()
-            });
+            commands
+                .spawn(SpriteBundle {
+                    material: materials.add(handle.into()),
+                    transform: Transform::from_translation(Vec3::new(
+                        column as f32 * map.tile_size,
+                        row as f32 * map.tile_size,
+                        0.,
+                    )),
+                    ..Default::default()
+                })
+                .with(MapTile { x: column, y: row });
         }
     }
 }

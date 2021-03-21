@@ -1,6 +1,6 @@
 use crate::actions::Actions;
 use crate::loading::TextureAssets;
-use crate::map::{Map, PlayerCamera};
+use crate::map::{Map, MapTile, PlayerCamera, Tile};
 use crate::GameState;
 use bevy::prelude::*;
 
@@ -20,7 +20,8 @@ impl Plugin for DiggerPlugin {
                 SystemSet::on_update(GameState::Playing)
                     .with_system(move_digger.system())
                     .with_system(loose_fuel.system())
-                    .with_system(update_fall_and_fly.system()),
+                    .with_system(update_fall_and_fly.system())
+                    .with_system(dig.system()),
             );
     }
 }
@@ -28,11 +29,15 @@ impl Plugin for DiggerPlugin {
 pub struct Digger;
 
 pub struct DiggerState {
+    pub dead: bool,
     pub money: f32,
     pub health: f32,
     pub health_max: f32,
     pub fuel: f32,
     pub fuel_max: f32,
+    pub mining_strength: f32,
+    pub mining_target: Option<(usize, usize)>,
+    pub mining: f32,
     pub falling: bool,
     pub falling_speed: f32,
 }
@@ -40,9 +45,13 @@ pub struct DiggerState {
 impl Default for DiggerState {
     fn default() -> Self {
         DiggerState {
+            mining_target: None,
+            dead: false,
             money: 0.,
             health: 100.,
             health_max: 100.,
+            mining_strength: 10.,
+            mining: 0.,
             fuel: 20.,
             fuel_max: 20.,
             falling: false,
@@ -130,10 +139,18 @@ fn move_digger(
             .round() as usize;
 
         if slot_next_x != if x > 0. { slot_x_right } else { slot_x_left } {
-            let next_tile = &map.tiles[slot_next_y][slot_next_x];
+            let slot_y = (digger_transform.translation.y / map.tile_size).round() as usize;
+            let next_tile = &map.tiles[slot_y][slot_next_x];
             if next_tile.collides() {
                 x = 0.;
+                if next_tile.mining_strength().is_some() {
+                    digger_state.mining_target = Some((slot_next_x, slot_y));
+                    digger_state.mining += digger_state.mining_strength * time.delta_seconds();
+                }
             }
+        } else {
+            digger_state.mining = 0.;
+            digger_state.mining_target = None;
         }
 
         digger_transform.translation.y += y;
@@ -147,6 +164,7 @@ fn move_digger(
 fn loose_fuel(mut digger_state: ResMut<DiggerState>, time: Res<Time>) {
     let fuel_rate = 1.;
     digger_state.fuel -= fuel_rate * time.delta_seconds();
+    digger_state.fuel = digger_state.fuel.clamp(0., digger_state.fuel_max);
 }
 
 fn update_fall_and_fly(
@@ -176,6 +194,39 @@ fn update_fall_and_fly(
         digger_state.falling_speed += flying_rate * time.delta_seconds();
     } else if digger_state.falling {
         digger_state.falling_speed -= falling_rate * time.delta_seconds();
+    } else {
+        digger_state.falling_speed = 0.;
     }
     digger_state.falling_speed = digger_state.falling_speed.clamp(-falling_rate, flying_rate);
+}
+
+fn dig(
+    mut digger_state: ResMut<DiggerState>,
+    mut map: ResMut<Map>,
+    mut tile_query: Query<(&MapTile, &mut Handle<ColorMaterial>)>,
+
+    texture_assets: Res<TextureAssets>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    if digger_state.mining_target.is_none() {
+        return;
+    }
+    let tile =
+        &map.tiles[digger_state.mining_target.unwrap().1][digger_state.mining_target.unwrap().0];
+    if digger_state.mining >= tile.mining_strength().unwrap() {
+        digger_state.money += tile.value();
+        for ((map_tile, mut material)) in tile_query.iter_mut() {
+            if map_tile.x != digger_state.mining_target.unwrap().0
+                || map_tile.y != digger_state.mining_target.unwrap().1
+            {
+                continue;
+            }
+            *material = materials.add(texture_assets.texture_background.clone().into());
+            map.tiles[digger_state.mining_target.unwrap().1]
+                [digger_state.mining_target.unwrap().0] = Tile::Background;
+            digger_state.mining_target = None;
+            digger_state.mining = 0.;
+            break;
+        }
+    }
 }

@@ -188,10 +188,14 @@ fn update_game_state(
 fn retry_system(
     mut commands: Commands,
     asset_server: ResMut<AssetServer>,
-    digger_state: Res<DiggerState>,
+    mut digger_state: ResMut<DiggerState>,
     button_materials: Res<ButtonMaterials>,
 ) {
+    if digger_state.dead {
+        return;
+    }
     if digger_state.health <= 0. || digger_state.fuel <= 0. {
+        digger_state.dead = true;
         commands
             .spawn(ButtonBundle {
                 style: Style {

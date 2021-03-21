@@ -34,6 +34,7 @@ pub struct FontAssets {
 pub struct TextureAssets {
     pub texture_sky: Handle<Texture>,
     pub texture_digger: Handle<Texture>,
+    pub texture_background: Handle<Texture>,
     pub texture_stone: Handle<Texture>,
     pub texture_gold: Handle<Texture>,
     pub texture_base: Handle<Texture>,
@@ -44,6 +45,7 @@ impl TextureAssets {
         match mineral {
             &Tile::Stone => self.texture_stone.clone(),
             &Tile::Gold => self.texture_gold.clone(),
+            &Tile::Background => self.texture_background.clone(),
             &Tile::Base => self.texture_base.clone(),
             &Tile::None => self.texture_sky.clone(),
         }
@@ -58,6 +60,7 @@ fn start_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     textures.push(asset_server.load_untyped(PATHS.texture_sky));
     textures.push(asset_server.load_untyped(PATHS.texture_digger));
     textures.push(asset_server.load_untyped(PATHS.texture_stone));
+    textures.push(asset_server.load_untyped(PATHS.texture_background));
     textures.push(asset_server.load_untyped(PATHS.texture_gold));
     textures.push(asset_server.load_untyped(PATHS.texture_base));
 
@@ -89,6 +92,7 @@ fn check_state(
         texture_base: asset_server.get_handle(PATHS.texture_base),
         texture_sky: asset_server.get_handle(PATHS.texture_sky),
         texture_digger: asset_server.get_handle(PATHS.texture_digger),
+        texture_background: asset_server.get_handle(PATHS.texture_background),
         texture_stone: asset_server.get_handle(PATHS.texture_stone),
         texture_gold: asset_server.get_handle(PATHS.texture_gold),
     });
