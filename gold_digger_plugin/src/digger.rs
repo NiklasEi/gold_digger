@@ -6,7 +6,7 @@ use bevy::prelude::*;
 
 pub struct DiggerPlugin;
 
-const Y_OFFSET_TO_DIGGER_BOTTOM: f32 = 12.;
+const Y_OFFSET_TO_DIGGER_BOTTOM: f32 = 10.;
 const LEFT_OFFSET_TO_DIGGER_BORDER: f32 = 12.;
 const RIGHT_OFFSET_TO_DIGGER_BORDER: f32 = 13.;
 
@@ -28,6 +28,7 @@ impl Plugin for DiggerPlugin {
 pub struct Digger;
 
 pub struct DiggerState {
+    pub money: f32,
     pub health: f32,
     pub health_max: f32,
     pub fuel: f32,
@@ -39,6 +40,7 @@ pub struct DiggerState {
 impl Default for DiggerState {
     fn default() -> Self {
         DiggerState {
+            money: 0.,
             health: 100.,
             health_max: 100.,
             fuel: 20.,
