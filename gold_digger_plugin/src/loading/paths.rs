@@ -1,6 +1,5 @@
 pub struct AssetPaths {
     pub fira_sans: &'static str,
-    pub texture_sky: &'static str,
     pub texture_digger: &'static str,
     pub texture_background: &'static str,
     pub texture_border: &'static str,
@@ -15,7 +14,6 @@ pub struct AssetPaths {
 
 pub const PATHS: AssetPaths = AssetPaths {
     fira_sans: "fonts/FiraSans-Bold.ttf",
-    texture_sky: "textures/none.png",
     texture_base: "textures/base.png",
     texture_digger: "textures/digger.png",
     texture_background: "textures/background.png",

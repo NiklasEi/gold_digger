@@ -40,8 +40,6 @@ struct Ui;
 
 struct RetryButton;
 
-struct HealthText;
-
 struct BaseText;
 
 struct WasteText;
@@ -81,46 +79,7 @@ fn init_life(
                     text: Text {
                         sections: vec![TextSection {
                             value: format!(
-                                "Health: {}/{}",
-                                digger_state.health.round(),
-                                digger_state.health_max
-                            ),
-                            style: TextStyle {
-                                font: font.clone(),
-                                font_size: 40.0,
-                                color: Color::rgb(1., 1., 1.),
-                                ..Default::default()
-                            },
-                        }],
-                        alignment: Default::default(),
-                    },
-                    ..Default::default()
-                })
-                .with(HealthText);
-        });
-
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                position: Rect {
-                    left: Val::Px(10.),
-                    top: Val::Px(50.),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-            material: material.clone(),
-            ..Default::default()
-        })
-        .with(Ui)
-        .with_children(|parent| {
-            parent
-                .spawn(TextBundle {
-                    text: Text {
-                        sections: vec![TextSection {
-                            value: format!(
-                                "Fuel (l): {}/{}",
+                                "Fuel: {}l/{}l",
                                 digger_state.fuel.round(),
                                 digger_state.fuel_max
                             ),
@@ -213,8 +172,8 @@ fn init_life(
             style: Style {
                 position_type: PositionType::Absolute,
                 position: Rect {
-                    left: Val::Percent(40.),
-                    top: Val::Px(10.),
+                    left: Val::Px(10.),
+                    top: Val::Px(50.),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -246,23 +205,15 @@ fn init_life(
 
 fn update_game_state(
     digger_state: Res<DiggerState>,
-    mut health_query: Query<&mut Text, (With<HealthText>, Without<MoneyText>, Without<FuelText>)>,
-    mut score_query: Query<&mut Text, (With<MoneyText>, Without<HealthText>, Without<FuelText>)>,
-    mut fuel_query: Query<&mut Text, (With<FuelText>, Without<HealthText>, Without<MoneyText>)>,
+    mut score_query: Query<&mut Text, (With<MoneyText>, Without<FuelText>)>,
+    mut fuel_query: Query<&mut Text, (With<FuelText>, Without<MoneyText>)>,
 ) {
-    for mut text in health_query.iter_mut() {
-        text.sections.first_mut().unwrap().value = format!(
-            "Health: {}/{}",
-            digger_state.health.round(),
-            digger_state.health_max
-        );
-    }
     for mut text in score_query.iter_mut() {
         text.sections.first_mut().unwrap().value = format!("$ {}", digger_state.money.round());
     }
     for mut text in fuel_query.iter_mut() {
         text.sections.first_mut().unwrap().value = format!(
-            "Fuel (l): {}/{}",
+            "Fuel: {}l/{}l",
             digger_state.fuel.round(),
             digger_state.fuel_max
         );
@@ -305,7 +256,7 @@ fn retry_system(
     if digger_state.dead {
         return;
     }
-    if digger_state.health <= 0. || digger_state.fuel <= 0. {
+    if digger_state.fuel <= 0. {
         digger_state.dead = true;
         commands
             .spawn(ButtonBundle {

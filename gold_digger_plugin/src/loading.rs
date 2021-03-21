@@ -32,7 +32,6 @@ pub struct FontAssets {
 }
 
 pub struct TextureAssets {
-    pub texture_sky: Handle<Texture>,
     pub texture_digger: Handle<Texture>,
     pub texture_background: Handle<Texture>,
     pub texture_border: Handle<Texture>,
@@ -54,7 +53,6 @@ impl TextureAssets {
             &Tile::Border => self.texture_border.clone(),
             &Tile::TankUpgrade => self.texture_tank_upgrade.clone(),
             &Tile::Base => self.texture_base.clone(),
-            &Tile::None => self.texture_sky.clone(),
             &Tile::Waste => self.texture_waste.clone(),
         }
     }
@@ -72,7 +70,6 @@ fn start_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     fonts.push(asset_server.load_untyped(PATHS.fira_sans));
 
     let mut textures: Vec<HandleUntyped> = vec![];
-    textures.push(asset_server.load_untyped(PATHS.texture_sky));
     textures.push(asset_server.load_untyped(PATHS.texture_digger));
     textures.push(asset_server.load_untyped(PATHS.texture_background));
     textures.push(asset_server.load_untyped(PATHS.texture_tank_upgrade));
@@ -110,7 +107,6 @@ fn check_state(
 
     commands.insert_resource(TextureAssets {
         texture_base: asset_server.get_handle(PATHS.texture_base),
-        texture_sky: asset_server.get_handle(PATHS.texture_sky),
         texture_digger: asset_server.get_handle(PATHS.texture_digger),
         texture_background: asset_server.get_handle(PATHS.texture_background),
         texture_tank_upgrade: asset_server.get_handle(PATHS.texture_tank_upgrade),

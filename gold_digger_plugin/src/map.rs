@@ -37,7 +37,6 @@ pub struct PlayerCamera;
 
 #[derive(PartialEq, Clone)]
 pub enum Tile {
-    None,
     Background,
     Border,
     TankUpgrade,
@@ -132,7 +131,7 @@ fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
         let mut row = vec![];
         row.push(Tile::Border);
         for _column in 1..map.dimensions.x - 1 {
-            row.push(Tile::None);
+            row.push(Tile::Background);
         }
         row.push(Tile::Border);
         map.tiles.push(row);
@@ -142,11 +141,11 @@ fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
         let mut row = vec![];
         row.push(Tile::Border);
         for _column in 1..(map.dimensions.x as usize) / 2 - 1 {
-            row.push(Tile::None);
+            row.push(Tile::Background);
         }
         row.append(&mut vec![Tile::Base, Tile::Base]);
         for _column in 1..(map.dimensions.x as usize) / 2 - 1 {
-            row.push(Tile::None);
+            row.push(Tile::Background);
         }
         row.push(Tile::Border);
         map.tiles.push(row);
