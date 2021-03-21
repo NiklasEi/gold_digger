@@ -10,6 +10,12 @@ const Y_OFFSET_TO_DIGGER_BOTTOM: f32 = 10.;
 const LEFT_OFFSET_TO_DIGGER_BORDER: f32 = 11.;
 const RIGHT_OFFSET_TO_DIGGER_BORDER: f32 = 12.;
 
+#[derive(SystemLabel, Eq, PartialEq, Hash, Clone, Debug)]
+pub enum DiggerSystemLabels {
+    MoveDigger,
+    MarkMiningTarget,
+}
+
 impl Plugin for DiggerPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<DiggerState>()
@@ -18,10 +24,16 @@ impl Plugin for DiggerPlugin {
             )
             .add_system_set(
                 SystemSet::on_update(GameState::Playing)
-                    .with_system(move_digger.system())
+                    .with_system(move_digger.system().label(DiggerSystemLabels::MoveDigger))
+                    .with_system(
+                        mark_mining_target
+                            .system()
+                            .label(DiggerSystemLabels::MarkMiningTarget)
+                            .after(DiggerSystemLabels::MoveDigger),
+                    )
                     .with_system(loose_fuel.system())
                     .with_system(update_fall_and_fly.system())
-                    .with_system(dig.system()),
+                    .with_system(dig.system().after(DiggerSystemLabels::MarkMiningTarget)),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Playing).with_system(
@@ -225,10 +237,10 @@ fn update_fall_and_fly(
 }
 
 fn dig(
+    mut commands: Commands,
     mut digger_state: ResMut<DiggerState>,
     mut map: ResMut<Map>,
-    mut tile_query: Query<(&MapTile, &mut Handle<ColorMaterial>)>,
-
+    mut tile_query: Query<(Entity, &MapTile, &mut Handle<ColorMaterial>), With<Mining>>,
     texture_assets: Res<TextureAssets>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
@@ -245,18 +257,56 @@ fn dig(
             digger_state.fuel += value;
             digger_state.fuel_max += value;
         }
-        for (map_tile, mut material) in tile_query.iter_mut() {
+        for (entity, map_tile, mut material) in tile_query.iter_mut() {
             if map_tile.x != digger_state.mining_target.unwrap().0
                 || map_tile.y != digger_state.mining_target.unwrap().1
             {
                 continue;
             }
+            commands.insert(entity, Mined);
             *material = materials.add(texture_assets.texture_background.clone().into());
             map.tiles[digger_state.mining_target.unwrap().1]
                 [digger_state.mining_target.unwrap().0] = Tile::Background;
             digger_state.mining_target = None;
             digger_state.mining = 0.;
             break;
+        }
+    }
+}
+
+struct Mining;
+struct Mined;
+
+fn mark_mining_target(
+    mut commands: Commands,
+    mut tile_query: Query<(Entity, &MapTile, &mut Handle<ColorMaterial>), Without<Mining>>,
+    mut mining_tile_query: Query<
+        (Entity, &MapTile, &mut Handle<ColorMaterial>),
+        (With<Mining>, Without<Mined>),
+    >,
+    digger_state: Res<DiggerState>,
+    texture_assets: Res<TextureAssets>,
+    map: Res<Map>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    if digger_state.mining_target.is_none() {
+        for (entity, map_tile, mut material) in mining_tile_query.iter_mut() {
+            let tile = &map.tiles[map_tile.y][map_tile.x];
+            *material = materials.add(texture_assets.get_tile_handle(tile).into());
+            commands.remove::<Mining>(entity);
+        }
+    } else {
+        for (entity, map_tile, mut material) in tile_query.iter_mut() {
+            if map_tile.x != digger_state.mining_target.unwrap().0
+                || map_tile.y != digger_state.mining_target.unwrap().1
+            {
+                continue;
+            }
+            commands.insert(entity, Mining);
+            let tile = &map.tiles[map_tile.y][map_tile.x];
+            if let Some(handle) = texture_assets.get_mining_tile_handle(tile) {
+                *material = materials.add(handle.into());
+            }
         }
     }
 }

@@ -38,7 +38,9 @@ pub struct TextureAssets {
     pub texture_border: Handle<Texture>,
     pub texture_tank_upgrade: Handle<Texture>,
     pub texture_stone: Handle<Texture>,
+    pub texture_stone_mining: Handle<Texture>,
     pub texture_gold: Handle<Texture>,
+    pub texture_gold_mining: Handle<Texture>,
     pub texture_base: Handle<Texture>,
 }
 
@@ -54,6 +56,13 @@ impl TextureAssets {
             &Tile::None => self.texture_sky.clone(),
         }
     }
+    pub fn get_mining_tile_handle(&self, mineral: &Tile) -> Option<Handle<Texture>> {
+        match mineral {
+            &Tile::Stone => Some(self.texture_stone_mining.clone()),
+            &Tile::Gold => Some(self.texture_gold_mining.clone()),
+            _ => None,
+        }
+    }
 }
 
 fn start_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -63,11 +72,13 @@ fn start_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut textures: Vec<HandleUntyped> = vec![];
     textures.push(asset_server.load_untyped(PATHS.texture_sky));
     textures.push(asset_server.load_untyped(PATHS.texture_digger));
-    textures.push(asset_server.load_untyped(PATHS.texture_stone));
     textures.push(asset_server.load_untyped(PATHS.texture_background));
     textures.push(asset_server.load_untyped(PATHS.texture_tank_upgrade));
     textures.push(asset_server.load_untyped(PATHS.texture_border));
+    textures.push(asset_server.load_untyped(PATHS.texture_stone));
+    textures.push(asset_server.load_untyped(PATHS.texture_stone_mining));
     textures.push(asset_server.load_untyped(PATHS.texture_gold));
+    textures.push(asset_server.load_untyped(PATHS.texture_gold_mining));
     textures.push(asset_server.load_untyped(PATHS.texture_base));
 
     commands.insert_resource(LoadingState { textures, fonts });
@@ -102,7 +113,9 @@ fn check_state(
         texture_tank_upgrade: asset_server.get_handle(PATHS.texture_tank_upgrade),
         texture_border: asset_server.get_handle(PATHS.texture_border),
         texture_stone: asset_server.get_handle(PATHS.texture_stone),
+        texture_stone_mining: asset_server.get_handle(PATHS.texture_stone_mining),
         texture_gold: asset_server.get_handle(PATHS.texture_gold),
+        texture_gold_mining: asset_server.get_handle(PATHS.texture_gold_mining),
     });
 
     state.set_next(GameState::Menu).unwrap();
