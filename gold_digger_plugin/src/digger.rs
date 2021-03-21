@@ -1,12 +1,14 @@
 use crate::actions::Actions;
+use crate::loading::TextureAssets;
 use crate::map::{Map, PlayerCamera};
 use crate::GameState;
 use bevy::prelude::*;
-use std::f32::consts::PI;
 
 pub struct DiggerPlugin;
 
-const Y_OFFSET_TO_DIGGER_BOTTOM: f32 = 10.;
+const Y_OFFSET_TO_DIGGER_BOTTOM: f32 = 12.;
+const LEFT_OFFSET_TO_DIGGER_BORDER: f32 = 12.;
+const RIGHT_OFFSET_TO_DIGGER_BORDER: f32 = 13.;
 
 impl Plugin for DiggerPlugin {
     fn build(&self, app: &mut AppBuilder) {
@@ -50,12 +52,12 @@ impl Default for DiggerState {
 fn spawn_digger(
     mut commands: Commands,
     map: Res<Map>,
-    asset_server: Res<AssetServer>,
+    texture_assets: Res<TextureAssets>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands
         .spawn(SpriteBundle {
-            material: materials.add(asset_server.load("digger.png").into()),
+            material: materials.add(texture_assets.texture_digger.clone().into()),
             transform: Transform::from_translation(Vec3::new(map.base.x, map.base.y, 1.)),
             ..Default::default()
         })
@@ -103,17 +105,22 @@ fn fall(
     let falling_rate = 500.;
     if let Ok(transform) = digger_query.single() {
         let digger_bottom = transform.translation.y - Y_OFFSET_TO_DIGGER_BOTTOM;
-        let slot_x = (transform.translation.x / map.tile_size).round() as usize;
+        let slot_x_left = ((transform.translation.x - LEFT_OFFSET_TO_DIGGER_BORDER) / map.tile_size)
+            .round() as usize;
+        let slot_x_right = ((transform.translation.x + RIGHT_OFFSET_TO_DIGGER_BORDER)
+            / map.tile_size)
+            .round() as usize;
         let slot_y = (digger_bottom / map.tile_size).round() as usize;
 
-        let tile = &map.tiles[slot_y][slot_x];
+        let tile_left = &map.tiles[slot_y][slot_x_left];
+        let tile_right = &map.tiles[slot_y][slot_x_right];
         let mut current_falling_speed = digger_state.falling_speed.unwrap_or(0.);
-        if tile != "stone.png" {
-            current_falling_speed += falling_rate * time.delta_seconds();
-            current_falling_speed.clamp(0., 50.);
-            digger_state.falling_speed = Some(current_falling_speed);
-        } else {
+        if tile_left.collides() || tile_right.collides() {
             digger_state.falling_speed = None;
+        } else {
+            current_falling_speed += falling_rate * time.delta_seconds();
+            current_falling_speed = current_falling_speed.clamp(0., 500.);
+            digger_state.falling_speed = Some(current_falling_speed);
         }
     }
 }
