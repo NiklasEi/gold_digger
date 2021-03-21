@@ -19,6 +19,8 @@ pub enum DiggerSystemLabels {
 impl Plugin for DiggerPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<DiggerState>()
+            .add_event::<FuelUpgrade>()
+            .add_event::<WasteCollected>()
             .add_system_set(
                 SystemSet::on_enter(GameState::Playing).with_system(spawn_digger.system()),
             )
@@ -44,6 +46,10 @@ impl Plugin for DiggerPlugin {
             );
     }
 }
+
+pub struct FuelUpgrade;
+
+pub struct WasteCollected;
 
 pub struct Digger;
 
@@ -238,6 +244,8 @@ fn dig(
     mut commands: Commands,
     mut digger_state: ResMut<DiggerState>,
     mut map: ResMut<Map>,
+    mut fuel_upgrade: EventWriter<FuelUpgrade>,
+    mut waste_collected: EventWriter<WasteCollected>,
     mut tile_query: Query<(Entity, &MapTile, &mut Handle<ColorMaterial>), With<Mining>>,
     texture_assets: Res<TextureAssets>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -252,9 +260,11 @@ fn dig(
             digger_state.money += value;
         } else if let Some(MiningEffect::TankUpgrade(value)) = tile.effect() {
             println!("upping fuel by {}", value);
+            fuel_upgrade.send(FuelUpgrade);
             digger_state.fuel += value;
             digger_state.fuel_max += value;
         } else if let Some(MiningEffect::CollectedWaste) = tile.effect() {
+            waste_collected.send(WasteCollected);
             digger_state.waste += 1;
         }
         for (entity, map_tile, mut material) in tile_query.iter_mut() {

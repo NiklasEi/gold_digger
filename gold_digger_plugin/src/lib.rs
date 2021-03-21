@@ -1,4 +1,5 @@
 mod actions;
+mod audio;
 mod base;
 mod digger;
 mod loading;
@@ -7,6 +8,7 @@ mod menu;
 mod ui;
 
 use crate::actions::ActionsPlugin;
+use crate::audio::InternalAudioPlugin;
 use crate::base::BasePlugin;
 use crate::digger::DiggerPlugin;
 use crate::loading::LoadingPlugin;
@@ -39,6 +41,7 @@ impl Plugin for GamePlugin {
             .add_plugin(DiggerPlugin)
             .add_plugin(ActionsPlugin)
             .add_plugin(BasePlugin)
+            .add_plugin(InternalAudioPlugin)
             .add_system_set(
                 SystemSet::on_enter(GameState::Restart).with_system(switch_to_game.system()),
             )

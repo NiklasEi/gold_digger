@@ -1,5 +1,9 @@
 pub struct AssetPaths {
     pub fira_sans: &'static str,
+    pub audio_digging: &'static str,
+    pub audio_flying: &'static str,
+    pub audio_fuel: &'static str,
+    pub audio_waste: &'static str,
     pub texture_digger: &'static str,
     pub texture_background: &'static str,
     pub texture_border: &'static str,
@@ -14,6 +18,10 @@ pub struct AssetPaths {
 
 pub const PATHS: AssetPaths = AssetPaths {
     fira_sans: "fonts/FiraSans-Bold.ttf",
+    audio_digging: "audio/drill.mp3",
+    audio_flying: "audio/flying.mp3",
+    audio_fuel: "audio/fuel.mp3",
+    audio_waste: "audio/waste.mp3",
     texture_base: "textures/base.png",
     texture_digger: "textures/digger.png",
     texture_background: "textures/background.png",
