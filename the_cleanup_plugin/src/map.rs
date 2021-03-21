@@ -10,7 +10,7 @@ pub struct MapPlugin;
 
 #[derive(SystemLabel, Eq, PartialEq, Hash, Clone, Debug)]
 pub enum MapSystemLabels {
-    DespawnMapAndCamera
+    DespawnMapAndCamera,
 }
 
 impl Plugin for MapPlugin {
@@ -43,7 +43,7 @@ pub enum Tile {
     Gold,
     Waste,
     Diamond,
-    Silver
+    Silver,
 }
 
 pub enum MiningEffect {

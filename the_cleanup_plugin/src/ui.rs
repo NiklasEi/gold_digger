@@ -15,7 +15,8 @@ impl Plugin for UiPlugin {
                     .with_system(retry_system.system())
                     .with_system(click_retry_button.system())
                     .with_system(update_base_text.system())
-                    .with_system(update_waste_text.system()),
+                    .with_system(update_waste_text.system())
+                    .with_system(won.system()),
             )
             .add_system_set(SystemSet::on_exit(GameState::Playing).with_system(remove_ui.system()));
     }
@@ -244,6 +245,85 @@ fn update_waste_text(digger_state: Res<DiggerState>, mut query: Query<&mut Text,
     for mut text in query.iter_mut() {
         text.sections.first_mut().unwrap().value =
             format!("Collected waste {}/{}", digger_state.waste, 10);
+    }
+}
+
+fn won(
+    mut commands: Commands,
+    asset_server: ResMut<AssetServer>,
+    mut digger_state: ResMut<DiggerState>,
+    button_materials: Res<ButtonMaterials>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
+) {
+    if digger_state.dead {
+        return;
+    }
+    if digger_state.waste == 10 {
+        let material = color_materials.add(Color::NONE.into());
+        digger_state.dead = true;
+        commands
+            .spawn(ButtonBundle {
+                style: Style {
+                    size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                    margin: Rect::all(Val::Auto),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..Default::default()
+                },
+                material: button_materials.normal.clone(),
+                ..Default::default()
+            })
+            .with(RetryButton)
+            .with(Ui)
+            .with_children(|parent| {
+                parent.spawn(TextBundle {
+                    text: Text {
+                        sections: vec![TextSection {
+                            value: "Restart".to_string(),
+                            style: TextStyle {
+                                font_size: 40.0,
+                                color: Color::rgb(0.9, 0.9, 0.9),
+                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                ..Default::default()
+                            },
+                        }],
+                        alignment: Default::default(),
+                    },
+                    ..Default::default()
+                });
+            });
+        commands
+            .spawn(NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    position: Rect {
+                        left: Val::Px(250.),
+                        bottom: Val::Px(100.),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                material: material.clone(),
+                ..Default::default()
+            })
+            .with(Ui)
+            .with_children(|parent| {
+                parent.spawn(TextBundle {
+                    text: Text {
+                        sections: vec![TextSection {
+                            value: format!("You did it! Thank you!"),
+                            style: TextStyle {
+                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font_size: 40.0,
+                                color: Color::rgb(1., 1., 1.),
+                                ..Default::default()
+                            },
+                        }],
+                        alignment: Default::default(),
+                    },
+                    ..Default::default()
+                });
+            });
     }
 }
 

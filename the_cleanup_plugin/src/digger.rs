@@ -110,6 +110,9 @@ fn move_digger(
     mut camera_query: Query<&mut Transform, (With<PlayerCamera>, Without<Digger>)>,
     mut digger_query: Query<&mut Transform, (With<Digger>, Without<PlayerCamera>)>,
 ) {
+    if digger_state.dead {
+        return;
+    }
     if actions.mining_down && digger_state.falling_speed == 0. {
         // this is only possible if the player is not actively pressing anything else. So the player should be standing still.
         for digger_transform in digger_query.iter_mut() {
@@ -202,6 +205,9 @@ fn move_digger(
 }
 
 fn loose_fuel(mut digger_state: ResMut<DiggerState>, time: Res<Time>) {
+    if digger_state.dead {
+        return;
+    }
     let fuel_rate = 0.5;
     digger_state.fuel -= fuel_rate * time.delta_seconds();
     digger_state.fuel = digger_state.fuel.clamp(0., digger_state.fuel_max);
