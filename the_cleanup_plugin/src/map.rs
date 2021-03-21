@@ -42,6 +42,8 @@ pub enum Tile {
     Stone,
     Gold,
     Waste,
+    Diamond,
+    Silver
 }
 
 pub enum MiningEffect {
@@ -54,7 +56,9 @@ impl Tile {
     pub fn collides(&self) -> bool {
         match self {
             &Tile::Stone => true,
+            &Tile::Silver => true,
             &Tile::Gold => true,
+            &Tile::Diamond => true,
             &Tile::Border => true,
             &Tile::TankUpgrade => true,
             &Tile::Waste => true,
@@ -64,17 +68,21 @@ impl Tile {
 
     pub fn mining_strength(&self) -> Option<f32> {
         match self {
-            &Tile::Stone => Some(15.),
+            &Tile::Stone => Some(10.),
             &Tile::TankUpgrade => Some(5.),
             &Tile::Waste => Some(5.),
-            &Tile::Gold => Some(20.),
+            &Tile::Silver => Some(20.),
+            &Tile::Gold => Some(30.),
+            &Tile::Diamond => Some(50.),
             _ => None,
         }
     }
 
     pub fn effect(&self) -> Option<MiningEffect> {
         match self {
-            &Tile::Gold => Some(MiningEffect::Money(10.)),
+            &Tile::Silver => Some(MiningEffect::Money(5.)),
+            &Tile::Gold => Some(MiningEffect::Money(20.)),
+            &Tile::Diamond => Some(MiningEffect::Money(50.)),
             &Tile::TankUpgrade => Some(MiningEffect::TankUpgrade(5.)),
             &Tile::Waste => Some(MiningEffect::CollectedWaste),
             _ => None,
@@ -84,11 +92,11 @@ impl Tile {
 
 impl Distribution<Tile> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tile {
-        match rng.gen_range(0..4) {
-            0 => Tile::Stone,
-            1 => Tile::Stone,
-            2 => Tile::Stone,
-            _ => Tile::Gold,
+        match rng.gen_range(0..100) {
+            0..=4 => Tile::Silver,
+            5..=6 => Tile::Gold,
+            7 => Tile::Diamond,
+            _ => Tile::Stone,
         }
     }
 }

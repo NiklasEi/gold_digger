@@ -47,8 +47,12 @@ pub struct TextureAssets {
     pub texture_tank_upgrade: Handle<Texture>,
     pub texture_stone: Handle<Texture>,
     pub texture_stone_mining: Handle<Texture>,
+    pub texture_silver: Handle<Texture>,
+    pub texture_silver_mining: Handle<Texture>,
     pub texture_gold: Handle<Texture>,
     pub texture_gold_mining: Handle<Texture>,
+    pub texture_diamond: Handle<Texture>,
+    pub texture_diamond_mining: Handle<Texture>,
     pub texture_base: Handle<Texture>,
     pub texture_waste: Handle<Texture>,
 }
@@ -58,6 +62,8 @@ impl TextureAssets {
         match mineral {
             &Tile::Stone => self.texture_stone.clone(),
             &Tile::Gold => self.texture_gold.clone(),
+            &Tile::Diamond => self.texture_diamond.clone(),
+            &Tile::Silver => self.texture_silver.clone(),
             &Tile::Background => self.texture_background.clone(),
             &Tile::Border => self.texture_border.clone(),
             &Tile::TankUpgrade => self.texture_tank_upgrade.clone(),
@@ -68,7 +74,9 @@ impl TextureAssets {
     pub fn get_mining_tile_handle(&self, mineral: &Tile) -> Option<Handle<Texture>> {
         match mineral {
             &Tile::Stone => Some(self.texture_stone_mining.clone()),
+            &Tile::Silver => Some(self.texture_silver_mining.clone()),
             &Tile::Gold => Some(self.texture_gold_mining.clone()),
+            &Tile::Diamond => Some(self.texture_diamond_mining.clone()),
             _ => None,
         }
     }
@@ -91,8 +99,12 @@ fn start_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     textures.push(asset_server.load_untyped(PATHS.texture_border));
     textures.push(asset_server.load_untyped(PATHS.texture_stone));
     textures.push(asset_server.load_untyped(PATHS.texture_stone_mining));
+    textures.push(asset_server.load_untyped(PATHS.texture_silver));
+    textures.push(asset_server.load_untyped(PATHS.texture_silver_mining));
     textures.push(asset_server.load_untyped(PATHS.texture_gold));
     textures.push(asset_server.load_untyped(PATHS.texture_gold_mining));
+    textures.push(asset_server.load_untyped(PATHS.texture_diamond));
+    textures.push(asset_server.load_untyped(PATHS.texture_diamond_mining));
     textures.push(asset_server.load_untyped(PATHS.texture_base));
     textures.push(asset_server.load_untyped(PATHS.texture_waste));
 
@@ -144,8 +156,12 @@ fn check_state(
         texture_border: asset_server.get_handle(PATHS.texture_border),
         texture_stone: asset_server.get_handle(PATHS.texture_stone),
         texture_stone_mining: asset_server.get_handle(PATHS.texture_stone_mining),
+        texture_silver: asset_server.get_handle(PATHS.texture_silver),
+        texture_silver_mining: asset_server.get_handle(PATHS.texture_silver_mining),
         texture_gold: asset_server.get_handle(PATHS.texture_gold),
         texture_gold_mining: asset_server.get_handle(PATHS.texture_gold_mining),
+        texture_diamond: asset_server.get_handle(PATHS.texture_diamond),
+        texture_diamond_mining: asset_server.get_handle(PATHS.texture_diamond_mining),
         texture_waste: asset_server.get_handle(PATHS.texture_waste),
     });
 
