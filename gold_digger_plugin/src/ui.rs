@@ -1,3 +1,4 @@
+use crate::base::Base;
 use crate::digger::DiggerState;
 use crate::GameState;
 use bevy::prelude::*;
@@ -12,8 +13,10 @@ impl Plugin for UiPlugin {
                 SystemSet::on_update(GameState::Playing)
                     .with_system(update_game_state.system())
                     .with_system(retry_system.system())
-                    .with_system(click_retry_button.system()),
-            );
+                    .with_system(click_retry_button.system())
+                    .with_system(update_base_text.system()),
+            )
+            .add_system_set(SystemSet::on_exit(GameState::Playing).with_system(remove_ui.system()));
     }
 }
 
@@ -32,9 +35,13 @@ impl FromWorld for ButtonMaterials {
     }
 }
 
+struct Ui;
+
 struct RetryButton;
 
 struct HealthText;
+
+struct BaseText;
 
 struct FuelText;
 
@@ -48,7 +55,7 @@ fn init_life(
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let material = color_materials.add(Color::NONE.into());
-    commands.spawn(UiCameraBundle::default());
+    commands.spawn(UiCameraBundle::default()).with(Ui);
 
     commands
         .spawn(NodeBundle {
@@ -64,6 +71,7 @@ fn init_life(
             material: material.clone(),
             ..Default::default()
         })
+        .with(Ui)
         .with_children(|parent| {
             parent
                 .spawn(TextBundle {
@@ -77,7 +85,7 @@ fn init_life(
                             style: TextStyle {
                                 font: font.clone(),
                                 font_size: 40.0,
-                                color: Color::rgb(0.6, 0.6, 0.6),
+                                color: Color::rgb(1., 1., 1.),
                                 ..Default::default()
                             },
                         }],
@@ -102,20 +110,21 @@ fn init_life(
             material: material.clone(),
             ..Default::default()
         })
+        .with(Ui)
         .with_children(|parent| {
             parent
                 .spawn(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: format!(
-                                "Fuel: {}/{}",
+                                "Fuel (l): {}/{}",
                                 digger_state.fuel.round(),
                                 digger_state.fuel_max
                             ),
                             style: TextStyle {
                                 font: font.clone(),
                                 font_size: 40.0,
-                                color: Color::rgb(0.6, 0.6, 0.6),
+                                color: Color::rgb(1., 1., 1.),
                                 ..Default::default()
                             },
                         }],
@@ -125,6 +134,7 @@ fn init_life(
                 })
                 .with(FuelText);
         });
+
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -139,6 +149,7 @@ fn init_life(
             material: material.clone(),
             ..Default::default()
         })
+        .with(Ui)
         .with_children(|parent| {
             parent
                 .spawn(TextBundle {
@@ -148,7 +159,7 @@ fn init_life(
                             style: TextStyle {
                                 font_size: 40.0,
                                 font: font.clone(),
-                                color: Color::rgb(0.6, 0.6, 0.6),
+                                color: Color::rgb(1., 1., 1.),
                                 ..Default::default()
                             },
                         }],
@@ -157,6 +168,41 @@ fn init_life(
                     ..Default::default()
                 })
                 .with(MoneyText);
+        });
+
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                position: Rect {
+                    left: Val::Percent(40.),
+                    top: Val::Px(10.),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            material: material.clone(),
+            ..Default::default()
+        })
+        .with(Ui)
+        .with_children(|parent| {
+            parent
+                .spawn(TextBundle {
+                    text: Text {
+                        sections: vec![TextSection {
+                            value: format!(""),
+                            style: TextStyle {
+                                font: font.clone(),
+                                font_size: 40.0,
+                                color: Color::rgb(1., 1., 1.),
+                                ..Default::default()
+                            },
+                        }],
+                        alignment: Default::default(),
+                    },
+                    ..Default::default()
+                })
+                .with(BaseText);
         });
 }
 
@@ -174,14 +220,34 @@ fn update_game_state(
         );
     }
     for mut text in score_query.iter_mut() {
-        text.sections.first_mut().unwrap().value = format!("$ {}", digger_state.money);
+        text.sections.first_mut().unwrap().value = format!("$ {}", digger_state.money.round());
     }
     for mut text in fuel_query.iter_mut() {
         text.sections.first_mut().unwrap().value = format!(
-            "Fuel: {}/{}",
+            "Fuel (l): {}/{}",
             digger_state.fuel.round(),
             digger_state.fuel_max
         );
+    }
+}
+
+fn update_base_text(base: Res<Base>, mut base_query: Query<&mut Text, With<BaseText>>) {
+    if base.active {
+        base_query
+            .single_mut()
+            .unwrap()
+            .sections
+            .first_mut()
+            .unwrap()
+            .value = "Refueling for 1$/l".to_owned();
+    } else {
+        base_query
+            .single_mut()
+            .unwrap()
+            .sections
+            .first_mut()
+            .unwrap()
+            .value = "".to_owned();
     }
 }
 
@@ -209,6 +275,7 @@ fn retry_system(
                 ..Default::default()
             })
             .with(RetryButton)
+            .with(Ui)
             .with_children(|parent| {
                 parent.spawn(TextBundle {
                     text: Text {
@@ -230,23 +297,18 @@ fn retry_system(
 }
 
 fn click_retry_button(
-    mut commands: Commands,
     button_materials: Res<ButtonMaterials>,
     mut state: ResMut<State<GameState>>,
     mut digger_state: ResMut<DiggerState>,
     mut interaction_query: Query<
-        (Entity, &Interaction, &mut Handle<ColorMaterial>, &Children),
+        (&Interaction, &mut Handle<ColorMaterial>),
         (Mutated<Interaction>, With<Button>),
     >,
-    text_query: Query<Entity, With<Text>>,
 ) {
-    for (button, interaction, mut material, children) in interaction_query.iter_mut() {
-        let text = text_query.get(children[0]).unwrap();
+    for (interaction, mut material) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Clicked => {
                 *digger_state = DiggerState::default();
-                commands.despawn(button);
-                commands.despawn(text);
                 state.set_next(GameState::Restart).unwrap();
             }
             Interaction::Hovered => {
@@ -256,5 +318,11 @@ fn click_retry_button(
                 *material = button_materials.normal.clone();
             }
         }
+    }
+}
+
+fn remove_ui(mut commands: Commands, text_query: Query<Entity, With<Ui>>) {
+    for entity in text_query.iter() {
+        commands.despawn_recursive(entity);
     }
 }

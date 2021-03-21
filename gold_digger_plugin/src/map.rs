@@ -4,9 +4,14 @@ use bevy::prelude::*;
 use crate::loading::TextureAssets;
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
-use rand::{random, Rng};
+use rand::{random, thread_rng, Rng};
 
 pub struct MapPlugin;
+
+#[derive(SystemLabel, Eq, PartialEq, Hash, Clone, Debug)]
+pub enum MapSystemLabels {
+    DespawnMapAndCamera,
+}
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut AppBuilder) {
@@ -17,6 +22,13 @@ impl Plugin for MapPlugin {
             SystemSet::on_enter(GameState::Playing)
                 .with_system(spawn_camera.system())
                 .with_system(render_map.system()),
+        )
+        .add_system_set(
+            SystemSet::on_exit(GameState::Playing).with_system(
+                remove_map
+                    .system()
+                    .label(MapSystemLabels::DespawnMapAndCamera),
+            ),
         );
     }
 }
@@ -27,9 +39,16 @@ pub struct PlayerCamera;
 pub enum Tile {
     None,
     Background,
+    Border,
+    TankUpgrade,
     Base,
     Stone,
     Gold,
+}
+
+pub enum MiningEffect {
+    Money(f32),
+    TankUpgrade(f32),
 }
 
 impl Tile {
@@ -37,6 +56,8 @@ impl Tile {
         match self {
             &Tile::Stone => true,
             &Tile::Gold => true,
+            &Tile::Border => true,
+            &Tile::TankUpgrade => true,
             _ => false,
         }
     }
@@ -44,15 +65,17 @@ impl Tile {
     pub fn mining_strength(&self) -> Option<f32> {
         match self {
             &Tile::Stone => Some(15.),
+            &Tile::TankUpgrade => Some(0.),
             &Tile::Gold => Some(20.),
             _ => None,
         }
     }
 
-    pub fn value(&self) -> f32 {
+    pub fn effect(&self) -> Option<MiningEffect> {
         match self {
-            &Tile::Gold => 10.,
-            _ => 0.,
+            &Tile::Gold => Some(MiningEffect::Money(10.)),
+            &Tile::TankUpgrade => Some(MiningEffect::TankUpgrade(5.)),
+            _ => None,
         }
     }
 }
@@ -90,48 +113,68 @@ fn generate_map(mut commands: Commands, mut state: ResMut<State<GameState>>) {
         tile_size: 32.,
         base: Vec2::new(24.5 * 32., 88. * 32.),
     };
+    let mut rng = thread_rng();
 
-    for _sky_rows in 0..10 {
-        map.tiles.push(
-            vec![Tile::None]
-                .iter()
-                .cycle()
-                .take(map.dimensions.x as usize)
-                .cloned()
-                .collect(),
-        );
+    map.tiles.push(
+        vec![Tile::Border]
+            .iter()
+            .cycle()
+            .take(map.dimensions.x as usize)
+            .cloned()
+            .collect(),
+    );
+    for _sky_rows in 1..10 {
+        let mut row = vec![];
+        row.push(Tile::Border);
+        for _column in 1..map.dimensions.x - 1 {
+            row.push(Tile::None);
+        }
+        row.push(Tile::Border);
+        map.tiles.push(row);
     }
 
     for _base_rows in 10..12 {
         let mut row = vec![];
-        row.append(
-            &mut vec![Tile::None]
-                .iter()
-                .cycle()
-                .take((map.dimensions.x as usize) / 2 - 1)
-                .cloned()
-                .collect(),
-        );
+        row.push(Tile::Border);
+        for _column in 1..(map.dimensions.x as usize) / 2 - 1 {
+            row.push(Tile::None);
+        }
         row.append(&mut vec![Tile::Base, Tile::Base]);
-        row.append(
-            &mut vec![Tile::None]
-                .iter()
-                .cycle()
-                .take((map.dimensions.x as usize) / 2 - 1)
-                .cloned()
-                .collect(),
-        );
+        for _column in 1..(map.dimensions.x as usize) / 2 - 1 {
+            row.push(Tile::None);
+        }
+        row.push(Tile::Border);
         map.tiles.push(row);
     }
 
-    for _stone_row in 12..map.dimensions.y {
+    for _stone_row in 12..map.dimensions.y - 1 {
         let mut row: Vec<Tile> = vec![];
-        for _column in 0..map.dimensions.x {
+        row.push(Tile::Border);
+        for _column in 1..map.dimensions.x - 1 {
             row.push(random::<Tile>().clone());
         }
+        row.push(Tile::Border);
         map.tiles.push(row);
     }
+    map.tiles.push(
+        vec![Tile::Border]
+            .iter()
+            .cycle()
+            .take(map.dimensions.x as usize)
+            .cloned()
+            .collect(),
+    );
     map.tiles.reverse();
+
+    // distribute 6 tank extensions
+    for _depth in 0..5 {
+        let x: usize = rng.gen_range(1..map.dimensions.x - 1);
+        let y: usize = rng.gen_range(1..map.dimensions.y - 13);
+
+        map.tiles[y][x] = Tile::TankUpgrade;
+    }
+    let x: usize = rng.gen_range(1..map.dimensions.x - 1);
+    map.tiles[map.dimensions.y - 15][x] = Tile::TankUpgrade;
 
     commands.insert_resource(map);
     state.set_next(GameState::Playing).unwrap();
@@ -170,4 +213,17 @@ fn render_map(
                 .with(MapTile { x: column, y: row });
         }
     }
+}
+
+fn remove_map(
+    mut commands: Commands,
+    map_query: Query<Entity, With<MapTile>>,
+    _player_camera: Query<Entity, With<PlayerCamera>>,
+) {
+    for entity in map_query.iter() {
+        commands.despawn(entity);
+    }
+    // for camera in player_camera.iter() {
+    //     commands.despawn(camera);
+    // }
 }

@@ -1,14 +1,14 @@
 use crate::actions::Actions;
 use crate::loading::TextureAssets;
-use crate::map::{Map, MapTile, PlayerCamera, Tile};
+use crate::map::{Map, MapSystemLabels, MapTile, MiningEffect, PlayerCamera, Tile};
 use crate::GameState;
 use bevy::prelude::*;
 
 pub struct DiggerPlugin;
 
 const Y_OFFSET_TO_DIGGER_BOTTOM: f32 = 10.;
-const LEFT_OFFSET_TO_DIGGER_BORDER: f32 = 12.;
-const RIGHT_OFFSET_TO_DIGGER_BORDER: f32 = 13.;
+const LEFT_OFFSET_TO_DIGGER_BORDER: f32 = 11.;
+const RIGHT_OFFSET_TO_DIGGER_BORDER: f32 = 12.;
 
 impl Plugin for DiggerPlugin {
     fn build(&self, app: &mut AppBuilder) {
@@ -22,6 +22,13 @@ impl Plugin for DiggerPlugin {
                     .with_system(loose_fuel.system())
                     .with_system(update_fall_and_fly.system())
                     .with_system(dig.system()),
+            )
+            .add_system_set(
+                SystemSet::on_exit(GameState::Playing).with_system(
+                    despawn_digger
+                        .system()
+                        .before(MapSystemLabels::DespawnMapAndCamera),
+                ),
             );
     }
 }
@@ -69,7 +76,11 @@ fn spawn_digger(
     commands
         .spawn(SpriteBundle {
             material: materials.add(texture_assets.texture_digger.clone().into()),
-            transform: Transform::from_translation(Vec3::new(map.base.x, map.base.y, 1.)),
+            transform: Transform::from_translation(Vec3::new(
+                map.base.x,
+                map.base.y + map.tile_size,
+                1.,
+            )),
             ..Default::default()
         })
         .with(Digger);
@@ -83,10 +94,23 @@ fn move_digger(
     mut camera_query: Query<&mut Transform, (With<PlayerCamera>, Without<Digger>)>,
     mut digger_query: Query<&mut Transform, (With<Digger>, Without<PlayerCamera>)>,
 ) {
+    if actions.mining_down && digger_state.falling_speed == 0. {
+        // this is only possible if the player is not actively pressing anything else. So the player should be standing still.
+        for digger_transform in digger_query.iter_mut() {
+            let slot_current_y = (digger_transform.translation.y / map.tile_size).round() as usize;
+            let slot_current_x = (digger_transform.translation.x / map.tile_size).round() as usize;
+            let tile_below = &map.tiles[slot_current_y - 1][slot_current_x];
+            if tile_below.collides() && tile_below.mining_strength().is_some() {
+                digger_state.mining_target = Some((slot_current_x, slot_current_y - 1));
+                digger_state.mining += digger_state.mining_strength * time.delta_seconds();
+                return;
+            }
+        }
+    }
     let mut x = 0.;
     let mut y = 0.;
     if let Some(drive) = actions.player_movement {
-        let speed = 150.;
+        let speed = 200.;
         x += drive * speed * time.delta_seconds();
     }
     y += digger_state.falling_speed * time.delta_seconds();
@@ -162,7 +186,7 @@ fn move_digger(
 }
 
 fn loose_fuel(mut digger_state: ResMut<DiggerState>, time: Res<Time>) {
-    let fuel_rate = 1.;
+    let fuel_rate = 0.5;
     digger_state.fuel -= fuel_rate * time.delta_seconds();
     digger_state.fuel = digger_state.fuel.clamp(0., digger_state.fuel_max);
 }
@@ -214,8 +238,14 @@ fn dig(
     let tile =
         &map.tiles[digger_state.mining_target.unwrap().1][digger_state.mining_target.unwrap().0];
     if digger_state.mining >= tile.mining_strength().unwrap() {
-        digger_state.money += tile.value();
-        for ((map_tile, mut material)) in tile_query.iter_mut() {
+        if let Some(MiningEffect::Money(value)) = tile.effect() {
+            digger_state.money += value;
+        } else if let Some(MiningEffect::TankUpgrade(value)) = tile.effect() {
+            println!("upping fuel by {}", value);
+            digger_state.fuel += value;
+            digger_state.fuel_max += value;
+        }
+        for (map_tile, mut material) in tile_query.iter_mut() {
             if map_tile.x != digger_state.mining_target.unwrap().0
                 || map_tile.y != digger_state.mining_target.unwrap().1
             {
@@ -228,5 +258,11 @@ fn dig(
             digger_state.mining = 0.;
             break;
         }
+    }
+}
+
+fn despawn_digger(mut commands: Commands, digger: Query<Entity, With<Digger>>) {
+    for digger in digger.iter() {
+        commands.despawn(digger);
     }
 }

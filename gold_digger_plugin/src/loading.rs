@@ -35,6 +35,8 @@ pub struct TextureAssets {
     pub texture_sky: Handle<Texture>,
     pub texture_digger: Handle<Texture>,
     pub texture_background: Handle<Texture>,
+    pub texture_border: Handle<Texture>,
+    pub texture_tank_upgrade: Handle<Texture>,
     pub texture_stone: Handle<Texture>,
     pub texture_gold: Handle<Texture>,
     pub texture_base: Handle<Texture>,
@@ -46,6 +48,8 @@ impl TextureAssets {
             &Tile::Stone => self.texture_stone.clone(),
             &Tile::Gold => self.texture_gold.clone(),
             &Tile::Background => self.texture_background.clone(),
+            &Tile::Border => self.texture_border.clone(),
+            &Tile::TankUpgrade => self.texture_tank_upgrade.clone(),
             &Tile::Base => self.texture_base.clone(),
             &Tile::None => self.texture_sky.clone(),
         }
@@ -61,6 +65,8 @@ fn start_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     textures.push(asset_server.load_untyped(PATHS.texture_digger));
     textures.push(asset_server.load_untyped(PATHS.texture_stone));
     textures.push(asset_server.load_untyped(PATHS.texture_background));
+    textures.push(asset_server.load_untyped(PATHS.texture_tank_upgrade));
+    textures.push(asset_server.load_untyped(PATHS.texture_border));
     textures.push(asset_server.load_untyped(PATHS.texture_gold));
     textures.push(asset_server.load_untyped(PATHS.texture_base));
 
@@ -93,6 +99,8 @@ fn check_state(
         texture_sky: asset_server.get_handle(PATHS.texture_sky),
         texture_digger: asset_server.get_handle(PATHS.texture_digger),
         texture_background: asset_server.get_handle(PATHS.texture_background),
+        texture_tank_upgrade: asset_server.get_handle(PATHS.texture_tank_upgrade),
+        texture_border: asset_server.get_handle(PATHS.texture_border),
         texture_stone: asset_server.get_handle(PATHS.texture_stone),
         texture_gold: asset_server.get_handle(PATHS.texture_gold),
     });

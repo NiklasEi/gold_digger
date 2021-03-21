@@ -29,8 +29,8 @@ impl Plugin for BasePlugin {
     }
 }
 
-struct Base {
-    active: bool,
+pub struct Base {
+    pub active: bool,
 }
 
 fn check_player_position(
@@ -47,6 +47,13 @@ fn check_player_position(
 
 fn fuel_up(base: Res<Base>, mut digger_state: ResMut<DiggerState>) {
     if base.active {
-        digger_state.fuel = digger_state.fuel_max;
+        let to_fuel = digger_state.fuel_max - digger_state.fuel;
+        if to_fuel > digger_state.money {
+            digger_state.fuel += digger_state.money;
+            digger_state.money = 0.;
+        } else {
+            digger_state.money -= to_fuel;
+            digger_state.fuel = digger_state.fuel_max;
+        }
     }
 }

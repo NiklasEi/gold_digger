@@ -15,6 +15,7 @@ impl Plugin for ActionsPlugin {
 pub struct Actions {
     pub player_movement: Option<f32>,
     pub flying: bool,
+    pub mining_down: bool,
 }
 
 fn set_movement_actions(mut actions: ResMut<Actions>, keyboard_input: Res<Input<KeyCode>>) {
@@ -25,6 +26,7 @@ fn set_movement_actions(mut actions: ResMut<Actions>, keyboard_input: Res<Input<
         || keyboard_input.pressed(KeyCode::A)
         || keyboard_input.pressed(KeyCode::D)
     {
+        actions.mining_down = false;
         let mut player_movement = actions.player_movement.unwrap_or(0.);
 
         if keyboard_input.just_released(KeyCode::W) {
@@ -50,5 +52,8 @@ fn set_movement_actions(mut actions: ResMut<Actions>, keyboard_input: Res<Input<
         actions.player_movement = Some(player_movement);
     } else {
         actions.player_movement = None;
+        if keyboard_input.just_released(KeyCode::S) || keyboard_input.just_pressed(KeyCode::S) {
+            actions.mining_down = keyboard_input.just_pressed(KeyCode::S);
+        }
     }
 }
