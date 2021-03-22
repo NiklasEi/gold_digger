@@ -56,6 +56,7 @@ jobs:
         run: |
           cargo build --release
           strip target/release/the_cleanup
+          chmod +x target/release/the_cleanup
       - name: Prepare assets
         run: |
           mkdir target/release/assets && cp -r assets target/release/assets
