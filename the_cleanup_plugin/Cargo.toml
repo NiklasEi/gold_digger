@@ -13,7 +13,7 @@ default = [
     "bevy/render",
     "bevy/png",
     "bevy/bevy_wgpu",
-    "bevy_kira_audio/mp3"
+    "bevy_kira_audio/ogg"
 ]
 
 [dependencies]

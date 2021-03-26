@@ -259,6 +259,7 @@ fn won(
         return;
     }
     if digger_state.waste == 10 {
+        digger_state.mining_target = None;
         let material = color_materials.add(Color::NONE.into());
         digger_state.dead = true;
         commands

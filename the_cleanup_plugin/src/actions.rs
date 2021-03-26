@@ -1,3 +1,4 @@
+use crate::digger::DiggerState;
 use crate::GameState;
 use bevy::prelude::*;
 
@@ -18,7 +19,18 @@ pub struct Actions {
     pub mining_down: bool,
 }
 
-fn set_movement_actions(mut actions: ResMut<Actions>, keyboard_input: Res<Input<KeyCode>>) {
+fn set_movement_actions(
+    mut actions: ResMut<Actions>,
+    keyboard_input: Res<Input<KeyCode>>,
+    state: Res<DiggerState>,
+) {
+    if state.dead || state.waste == 10 {
+        actions.flying = false;
+        actions.mining_down = false;
+        actions.player_movement = None;
+        return;
+    }
+
     if keyboard_input.just_released(KeyCode::W)
         || keyboard_input.just_pressed(KeyCode::W)
         || keyboard_input.just_released(KeyCode::A)

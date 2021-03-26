@@ -22,10 +22,10 @@ pub struct AssetPaths {
 
 pub const PATHS: AssetPaths = AssetPaths {
     fira_sans: "fonts/FiraSans-Bold.ttf",
-    audio_digging: "audio/drill.mp3",
-    audio_flying: "audio/flying.mp3",
-    audio_fuel: "audio/fuel.mp3",
-    audio_waste: "audio/waste.mp3",
+    audio_digging: "audio/drill.ogg",
+    audio_flying: "audio/flying.ogg",
+    audio_fuel: "audio/fuel.ogg",
+    audio_waste: "audio/waste.ogg",
     texture_base: "textures/base.png",
     texture_digger: "textures/digger.png",
     texture_background: "textures/background.png",
