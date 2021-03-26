@@ -2920,7 +2920,7 @@ dependencies = [
 
 [[package]]
 name = "the_cleanup"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bevy",
  "embed-resource",
@@ -2930,7 +2930,7 @@ dependencies = [
 
 [[package]]
 name = "the_cleanup_plugin"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bevy",
  "bevy_kira_audio",
