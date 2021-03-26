@@ -17,7 +17,7 @@ default = [
 ]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy/", rev = "cd4c684ad5563c99b01e4ee6eea7c9b560c5dd5a", default-features = false }
+bevy = { git = "https://github.com/bevyengine/bevy/", rev = "7a511394ac6c4f90b5398ab6333f1bd4fd665613", default-features = false }
 the_cleanup_plugin = {path = "the_cleanup_plugin"}
 winit = "0.24.0"
 

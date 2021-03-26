@@ -201,11 +201,11 @@ fn generate_map(mut commands: Commands) {
 
 fn spawn_camera(mut commands: Commands, map: Res<Map>) {
     commands
-        .spawn(OrthographicCameraBundle {
+        .spawn_bundle(OrthographicCameraBundle {
             transform: Transform::from_xyz(map.base.x, map.base.y, 999.),
             ..OrthographicCameraBundle::new_2d()
         })
-        .with(PlayerCamera);
+        .insert(PlayerCamera);
 }
 
 fn render_map(
@@ -220,7 +220,7 @@ fn render_map(
 
             let handle = texture_assets.get_tile_handle(tile);
             commands
-                .spawn(SpriteBundle {
+                .spawn_bundle(SpriteBundle {
                     material: materials.add(handle.into()),
                     transform: Transform::from_translation(Vec3::new(
                         column as f32 * map.tile_size,
@@ -229,7 +229,7 @@ fn render_map(
                     )),
                     ..Default::default()
                 })
-                .with(MapTile { x: column, y: row });
+                .insert(MapTile { x: column, y: row });
         }
     }
 }
@@ -240,6 +240,6 @@ fn remove_map(
     _player_camera: Query<Entity, With<PlayerCamera>>,
 ) {
     for entity in map_query.iter() {
-        commands.despawn(entity);
+        commands.entity(entity).despawn();
     }
 }

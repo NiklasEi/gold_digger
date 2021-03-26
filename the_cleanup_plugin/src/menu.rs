@@ -35,9 +35,9 @@ fn setup_menu(
     asset_server: Res<AssetServer>,
     button_materials: Res<ButtonMaterials>,
 ) {
+    commands.spawn_bundle(UiCameraBundle::default());
     commands
-        .spawn(UiCameraBundle::default())
-        .spawn(ButtonBundle {
+        .spawn_bundle(ButtonBundle {
             style: Style {
                 size: Size::new(Val::Px(120.0), Val::Px(50.0)),
                 margin: Rect::all(Val::Auto),
@@ -48,9 +48,9 @@ fn setup_menu(
             material: button_materials.normal.clone(),
             ..Default::default()
         })
-        .with(PlayButton)
+        .insert(PlayButton)
         .with_children(|parent| {
-            parent.spawn(TextBundle {
+            parent.spawn_bundle(TextBundle {
                 text: Text {
                     sections: vec![TextSection {
                         value: "Play".to_string(),
@@ -74,7 +74,7 @@ fn click_play_button(
     mut state: ResMut<State<GameState>>,
     mut interaction_query: Query<
         (Entity, &Interaction, &mut Handle<ColorMaterial>, &Children),
-        (Mutated<Interaction>, With<Button>),
+        (Changed<Interaction>, With<Button>),
     >,
     text_query: Query<Entity, With<Text>>,
 ) {
@@ -82,9 +82,9 @@ fn click_play_button(
         let text = text_query.get(children[0]).unwrap();
         match *interaction {
             Interaction::Clicked => {
-                commands.despawn(button);
-                commands.despawn(text);
-                state.set_next(GameState::Playing).unwrap();
+                commands.entity(button).despawn();
+                commands.entity(text).despawn();
+                state.set(GameState::Playing).unwrap();
             }
             Interaction::Hovered => {
                 *material = button_materials.hovered.clone();

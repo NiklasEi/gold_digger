@@ -90,7 +90,7 @@ fn spawn_digger(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands
-        .spawn(SpriteBundle {
+        .spawn_bundle(SpriteBundle {
             material: materials.add(texture_assets.texture_digger.clone().into()),
             transform: Transform::from_translation(Vec3::new(
                 map.base.x,
@@ -99,7 +99,7 @@ fn spawn_digger(
             )),
             ..Default::default()
         })
-        .with(Digger);
+        .insert(Digger);
 }
 
 fn move_digger(
@@ -278,7 +278,7 @@ fn dig(
             {
                 continue;
             }
-            commands.insert(entity, Mined);
+            commands.entity(entity).insert(Mined);
             *material = materials.add(texture_assets.texture_background.clone().into());
             map.tiles[digger_state.mining_target.unwrap().1]
                 [digger_state.mining_target.unwrap().0] = Tile::Background;
@@ -308,7 +308,7 @@ fn mark_mining_target(
         for (entity, map_tile, mut material) in mining_tile_query.iter_mut() {
             let tile = &map.tiles[map_tile.y][map_tile.x];
             *material = materials.add(texture_assets.get_tile_handle(tile).into());
-            commands.remove::<Mining>(entity);
+            commands.entity(entity).remove::<Mining>();
         }
     } else {
         for (entity, map_tile, mut material) in tile_query.iter_mut() {
@@ -317,7 +317,7 @@ fn mark_mining_target(
             {
                 continue;
             }
-            commands.insert(entity, Mining);
+            commands.entity(entity).insert(Mining);
             let tile = &map.tiles[map_tile.y][map_tile.x];
             if let Some(handle) = texture_assets.get_mining_tile_handle(tile) {
                 *material = materials.add(handle.into());
@@ -328,6 +328,6 @@ fn mark_mining_target(
 
 fn despawn_digger(mut commands: Commands, digger: Query<Entity, With<Digger>>) {
     for digger in digger.iter() {
-        commands.despawn(digger);
+        commands.entity(digger).despawn();
     }
 }

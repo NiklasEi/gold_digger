@@ -57,10 +57,10 @@ fn init_life(
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let material = color_materials.add(Color::NONE.into());
-    commands.spawn(UiCameraBundle::default()).with(Ui);
+    commands.spawn_bundle(UiCameraBundle::default()).insert(Ui);
 
     commands
-        .spawn(NodeBundle {
+        .spawn_bundle(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 position: Rect {
@@ -73,10 +73,10 @@ fn init_life(
             material: material.clone(),
             ..Default::default()
         })
-        .with(Ui)
+        .insert(Ui)
         .with_children(|parent| {
             parent
-                .spawn(TextBundle {
+                .spawn_bundle(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: format!(
@@ -95,11 +95,11 @@ fn init_life(
                     },
                     ..Default::default()
                 })
-                .with(FuelText);
+                .insert(FuelText);
         });
 
     commands
-        .spawn(NodeBundle {
+        .spawn_bundle(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 position: Rect {
@@ -112,10 +112,10 @@ fn init_life(
             material: material.clone(),
             ..Default::default()
         })
-        .with(Ui)
+        .insert(Ui)
         .with_children(|parent| {
             parent
-                .spawn(TextBundle {
+                .spawn_bundle(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: format!("$ {}", digger_state.money),
@@ -130,11 +130,11 @@ fn init_life(
                     },
                     ..Default::default()
                 })
-                .with(MoneyText);
+                .insert(MoneyText);
         });
 
     commands
-        .spawn(NodeBundle {
+        .spawn_bundle(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 position: Rect {
@@ -147,10 +147,10 @@ fn init_life(
             material: material.clone(),
             ..Default::default()
         })
-        .with(Ui)
+        .insert(Ui)
         .with_children(|parent| {
             parent
-                .spawn(TextBundle {
+                .spawn_bundle(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: format!("Collected waste {}/{}", digger_state.waste, 10),
@@ -165,11 +165,11 @@ fn init_life(
                     },
                     ..Default::default()
                 })
-                .with(WasteText);
+                .insert(WasteText);
         });
 
     commands
-        .spawn(NodeBundle {
+        .spawn_bundle(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 position: Rect {
@@ -182,10 +182,10 @@ fn init_life(
             material: material.clone(),
             ..Default::default()
         })
-        .with(Ui)
+        .insert(Ui)
         .with_children(|parent| {
             parent
-                .spawn(TextBundle {
+                .spawn_bundle(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: format!(""),
@@ -200,7 +200,7 @@ fn init_life(
                     },
                     ..Default::default()
                 })
-                .with(BaseText);
+                .insert(BaseText);
         });
 }
 
@@ -262,7 +262,7 @@ fn won(
         let material = color_materials.add(Color::NONE.into());
         digger_state.dead = true;
         commands
-            .spawn(ButtonBundle {
+            .spawn_bundle(ButtonBundle {
                 style: Style {
                     size: Size::new(Val::Px(150.0), Val::Px(65.0)),
                     margin: Rect::all(Val::Auto),
@@ -273,10 +273,10 @@ fn won(
                 material: button_materials.normal.clone(),
                 ..Default::default()
             })
-            .with(RetryButton)
-            .with(Ui)
+            .insert(RetryButton)
+            .insert(Ui)
             .with_children(|parent| {
-                parent.spawn(TextBundle {
+                parent.spawn_bundle(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: "Restart".to_string(),
@@ -293,7 +293,7 @@ fn won(
                 });
             });
         commands
-            .spawn(NodeBundle {
+            .spawn_bundle(NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
                     position: Rect {
@@ -306,9 +306,9 @@ fn won(
                 material: material.clone(),
                 ..Default::default()
             })
-            .with(Ui)
+            .insert(Ui)
             .with_children(|parent| {
-                parent.spawn(TextBundle {
+                parent.spawn_bundle(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: format!("You did it! Thank you!"),
@@ -339,7 +339,7 @@ fn retry_system(
     if digger_state.fuel <= 0. {
         digger_state.dead = true;
         commands
-            .spawn(ButtonBundle {
+            .spawn_bundle(ButtonBundle {
                 style: Style {
                     size: Size::new(Val::Px(150.0), Val::Px(65.0)),
                     margin: Rect::all(Val::Auto),
@@ -350,10 +350,10 @@ fn retry_system(
                 material: button_materials.normal.clone(),
                 ..Default::default()
             })
-            .with(RetryButton)
-            .with(Ui)
+            .insert(RetryButton)
+            .insert(Ui)
             .with_children(|parent| {
-                parent.spawn(TextBundle {
+                parent.spawn_bundle(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: "Restart".to_string(),
@@ -378,14 +378,14 @@ fn click_retry_button(
     mut digger_state: ResMut<DiggerState>,
     mut interaction_query: Query<
         (&Interaction, &mut Handle<ColorMaterial>),
-        (Mutated<Interaction>, With<Button>),
+        (Changed<Interaction>, With<Button>),
     >,
 ) {
     for (interaction, mut material) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Clicked => {
                 *digger_state = DiggerState::default();
-                state.set_next(GameState::Restart).unwrap();
+                state.set(GameState::Restart).unwrap();
             }
             Interaction::Hovered => {
                 *material = button_materials.hovered.clone();
@@ -399,6 +399,6 @@ fn click_retry_button(
 
 fn remove_ui(mut commands: Commands, text_query: Query<Entity, With<Ui>>) {
     for entity in text_query.iter() {
-        commands.despawn_recursive(entity);
+        commands.entity(entity).despawn_recursive();
     }
 }

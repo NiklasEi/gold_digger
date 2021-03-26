@@ -165,11 +165,11 @@ fn check_state(
         texture_waste: asset_server.get_handle(PATHS.texture_waste),
     });
 
-    state.set_next(GameState::Menu).unwrap();
+    state.set(GameState::Menu).unwrap();
 }
 
 fn clean_up_loading(mut commands: Commands, text_query: Query<Entity, With<LoadingIndicator>>) {
     for remove in text_query.iter() {
-        commands.despawn_recursive(remove);
+        commands.entity(remove).despawn_recursive();
     }
 }

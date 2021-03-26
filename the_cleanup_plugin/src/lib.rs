@@ -20,7 +20,7 @@ use bevy::app::AppBuilder;
 use bevy::ecs::schedule::SystemSet;
 use bevy::prelude::*;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 enum GameState {
     Restart,
     Loading,
@@ -50,5 +50,5 @@ impl Plugin for GamePlugin {
 }
 
 fn switch_to_game(mut state: ResMut<State<GameState>>) {
-    state.set_next(GameState::Playing).unwrap();
+    state.set(GameState::Playing).unwrap();
 }
